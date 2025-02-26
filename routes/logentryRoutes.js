@@ -3,8 +3,6 @@ const router = express.Router();
 const logbookController = require('../controllers/logentryController');
 
 router.post('/add', logbookController.addEntry);
-router.get('/:userId', logbookController.getEntries);
+router.get('/:email', logbookController.getEntries); // 🔹 Use email instead of userId
 
 module.exports = router;
-
-
