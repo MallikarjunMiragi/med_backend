@@ -2,9 +2,9 @@ const User = require('../models/User'); // Adjust the path to your User model
 
 // Signup method
 exports.signup = async (req, res) => {
-    const { email, password, fullName, country, trainingYear, hospital, speciality } = req.body;
+    const { email, password, country, trainingYear, hospital, specialty } = req.body;
 
-    if (!email || !password || !country || !trainingYear || !hospital || !speciality) {
+    if (!email || !password || !country || !trainingYear || !hospital || !specialty) {
         return res.status(400).json({ error: "All fields are required" });
     }
 
@@ -21,7 +21,7 @@ exports.signup = async (req, res) => {
             country,
             trainingYear,
             hospital,
-            speciality,
+            specialty,
         });
 
         await user.save();

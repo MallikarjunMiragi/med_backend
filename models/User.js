@@ -25,14 +25,14 @@ const userSchema = new mongoose.Schema({
     required: true,
   },
   trainingYear: {
-    type: Number,
+    type: String,
     required: true,
   },
   hospital: {
     type: String,
     required: true,
   },
-  speciality: {
+  specialty: {
     type: String,
     required: true,
   },
