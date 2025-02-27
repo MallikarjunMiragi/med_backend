@@ -3,10 +3,10 @@ const Category = require('../models/Category');
 
 // Add log entry to a category
 exports.addEntry = async (req, res) => {
-    const { userId, categoryId, data } = req.body;
+    const { email, categoryId, data } = req.body; // 🔹 Use email instead of userId
 
-    if (!userId || !categoryId || !data) {
-        return res.status(400).json({ error: "User, category, and data are required" });
+    if (!email || !categoryId || !data) {
+        return res.status(400).json({ error: "Email, category, and data are required" });
     }
 
     try {
@@ -19,7 +19,8 @@ exports.addEntry = async (req, res) => {
             return res.status(400).json({ error: `Missing required fields: ${missingFields.join(", ")}` });
         }
 
-        const newEntry = new LogEntry({ user: userId, category: categoryId, data });
+        // 🔹 Store email instead of userId in the log entry
+        const newEntry = new LogEntry({ email, category: categoryId, data });
         await newEntry.save();
         res.status(201).json({ message: "Log entry added successfully", newEntry });
     } catch (error) {
@@ -30,10 +31,10 @@ exports.addEntry = async (req, res) => {
 
 // Get logbook entries for a user
 exports.getEntries = async (req, res) => {
-    const { userId } = req.params;
+    const { email } = req.params; // 🔹 Fetch entries using email instead of userId
 
     try {
-        const entries = await LogEntry.find({ user: userId }).populate('category');
+        const entries = await LogEntry.find({ email }).populate('category');
         res.status(200).json(entries);
     } catch (error) {
         console.error(error);
