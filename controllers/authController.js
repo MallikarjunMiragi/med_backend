@@ -57,6 +57,19 @@ exports.login = async (req, res) => {
     }
 };
 
+// Fetch all users (students)
+exports.getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find({}, "fullName email"); // Fetch only necessary fields
+        res.status(200).json(users);
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+
+
 // Update user details
 exports.updateUser = async (req, res) => {
     const { email, fullName, country } = req.body;
