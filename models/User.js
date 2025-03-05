@@ -40,6 +40,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  role: {
+    type: String,
+    enum: ['student', 'doctor'], // Role should be either student or doctor
+    required: true,
+  },
 });
 
 // Create the User model

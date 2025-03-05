@@ -2,10 +2,19 @@ const User = require('../models/User'); // Adjust the path to your User model
 
 // Signup method
 exports.signup = async (req, res) => {
-    const { fullName, email, password, country, trainingYear, hospital, specialty } = req.body;
+    const { fullName, email, password, country, trainingYear, hospital, specialty, role } = req.body;
 
-    if (!email || !password || !country || !trainingYear || !hospital || !specialty) {
+    if (!email || !password || !country || !hospital || !specialty || !role) {
         return res.status(400).json({ error: "All fields are required" });
+    }
+
+    if (role !== 'student' && role !== 'doctor') {
+        return res.status(400).json({ error: "Invalid role. Choose either 'student' or 'doctor'." });
+    }
+
+    // Ensure trainingYear is provided for students
+    if (role === 'student' && !trainingYear) {
+        return res.status(400).json({ error: "Training year is required for students." });
     }
 
     try {
@@ -15,15 +24,15 @@ exports.signup = async (req, res) => {
         }
 
         const user = new User({
-            fullName,  // Updated field
+            fullName,
             email,
-            password,
+            password, // Password should ideally be hashed
             country,
-            trainingYear,
+            trainingYear: role === 'student' ? trainingYear : null, // Only store trainingYear for students
             hospital,
             specialty,
+            role,
         });
-
         await user.save();
         res.status(201).json({ message: "User registered successfully" });
     } catch (error) {
@@ -34,14 +43,14 @@ exports.signup = async (req, res) => {
 
 // Login method
 exports.login = async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
-    if (!email || !password) {
-        return res.status(400).json({ error: "Email and password are required" });
+    if (!email || !password || !role) {
+        return res.status(400).json({ error: "Email, password, and role are required" });
     }
 
     try {
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email, role }); // Ensure the user is logging in with the correct role
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
@@ -50,17 +59,22 @@ exports.login = async (req, res) => {
             return res.status(401).json({ error: "Invalid credentials" });
         }
 
-        res.status(200).json({ message: "Login successful", user });
+        res.status(200).json({ message: `Login successful as ${role}`, user });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
 
-// Fetch all users (students)
-exports.getAllUsers = async (req, res) => {
+exports.getUsersByRole = async (req, res) => {
+    const { role } = req.params; // role should be "student" or "doctor"
+
+    if (role !== 'student' && role !== 'doctor') {
+        return res.status(400).json({ error: "Invalid role specified" });
+    }
+
     try {
-        const users = await User.find({}, "fullName email"); // Fetch only necessary fields
+        const users = await User.find({ role }, "fullName email role");
         res.status(200).json(users);
     } catch (error) {
         console.error("Error fetching users:", error);
