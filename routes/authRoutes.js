@@ -9,4 +9,11 @@ router.post('/login', authController.login);
 // router.get('/users', authController.getAllUsers);
 router.get('/users/:role', authController.getUsersByRole); 
 
+
+
+router.get("/user/:email", authController.getUserByEmail);
+router.put("/user/update", authController.updateUser);
+router.delete("/user/delete/:email", authController.deleteUser);
+
+
 module.exports = router;
