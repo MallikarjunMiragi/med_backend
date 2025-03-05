@@ -1,0 +1,14 @@
+digraph "Signature Verification System Architecture" {
+	graph [fontcolor="#2D3436" fontname="Sans-Serif" fontsize=15 label="Signature Verification System Architecture" nodesep=0.60 pad=2.0 rankdir=LR ranksep=0.75 splines=ortho]
+	node [fixedsize=true fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13 height=1.4 imagescale=true labelloc=b shape=box style=rounded width=1.4]
+	edge [color="#7B8894"]
+	acf0bb7625e74e0c9b45ef7ec31ae1d3 [label="Input: Signature (Image/Capture)"]
+	da58b23f955444f8a70b43011486dd7d [label=Preprocessing]
+	a7c4b8a2533f4548a9700afd2d252462 [label="Feature Extraction"]
+	"1845b1df3a514837b12d21fcd5199592" [label="Feature Comparison"]
+	"7a300da2e7bf4e44bff753b6ccb46e2e" [label="Decision/Verification"]
+	acf0bb7625e74e0c9b45ef7ec31ae1d3 -> da58b23f955444f8a70b43011486dd7d [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	da58b23f955444f8a70b43011486dd7d -> a7c4b8a2533f4548a9700afd2d252462 [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	a7c4b8a2533f4548a9700afd2d252462 -> "1845b1df3a514837b12d21fcd5199592" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"1845b1df3a514837b12d21fcd5199592" -> "7a300da2e7bf4e44bff753b6ccb46e2e" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+}
