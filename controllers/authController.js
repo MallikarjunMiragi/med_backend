@@ -59,7 +59,7 @@ exports.login = async (req, res) => {
             return res.status(401).json({ error: "Invalid credentials" });
         }
 
-        res.status(200).json({ message: `Login successful as ${role}`, user });
+        res.status(200).json({ message: `Login successful as`, user });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Internal Server Error" });
