@@ -82,6 +82,8 @@ exports.getUserByEmail = async (req, res) => {
         res.json(user);
     } catch (error) {
         console.error("Error fetching user:", error);
+    }
+}
 
 exports.getUsersByRole = async (req, res) => {
     const { role } = req.params; // role should be "student" or "doctor"
@@ -156,4 +158,5 @@ exports.deleteUser = async (req, res) => {
         console.error("Error deleting user:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
+
 };
