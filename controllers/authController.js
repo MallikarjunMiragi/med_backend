@@ -57,18 +57,47 @@ exports.login = async (req, res) => {
     }
 };
 
+
+
+// ✅ Fetch user by email
+exports.getUserByEmail = async (req, res) => {
+    try {
+        const email = decodeURIComponent(req.params.email);
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        res.json(user);
+    } catch (error) {
+        console.error("Error fetching user:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+
+  
 // Update user details
 exports.updateUser = async (req, res) => {
-    const { email, fullName, country } = req.body;
+    const { email, fullName, password, country, trainingYear, hospital, specialty } = req.body;
 
     if (!email) {
         return res.status(400).json({ error: "Email is required to update user details" });
     }
 
     try {
+        const updateFields = { fullName, country, trainingYear, hospital, specialty };
+
+        // 🔹 Update password only if provided
+        if (password) {
+            updateFields.password = password;
+        }
+
         const updatedUser = await User.findOneAndUpdate(
             { email }, 
-            { fullName, country }, 
+            updateFields, 
             { new: true }
         );
 
@@ -78,14 +107,15 @@ exports.updateUser = async (req, res) => {
 
         res.status(200).json({ message: "User details updated successfully", user: updatedUser });
     } catch (error) {
-        console.error(error);
+        console.error("Error updating user:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
 
+
 // Delete user account
 exports.deleteUser = async (req, res) => {
-    const { email } = req.body;
+    const { email } = req.params; // ✅ Get email from request params
 
     if (!email) {
         return res.status(400).json({ error: "Email is required to delete user" });
@@ -100,7 +130,7 @@ exports.deleteUser = async (req, res) => {
 
         res.status(200).json({ message: "User deleted successfully" });
     } catch (error) {
-        console.error(error);
+        console.error("Error deleting user:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
