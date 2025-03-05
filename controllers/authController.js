@@ -43,14 +43,14 @@ exports.signup = async (req, res) => {
 
 // Login method
 exports.login = async (req, res) => {
-    const { email, password, role } = req.body;
+    const { email, password } = req.body;
 
-    if (!email || !password || !role) {
+    if (!email || !password ) {
         return res.status(400).json({ error: "Email, password, and role are required" });
     }
 
     try {
-        const user = await User.findOne({ email, role }); // Ensure the user is logging in with the correct role
+        const user = await User.findOne({ email }); // Ensure the user is logging in with the correct role
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
