@@ -9,6 +9,7 @@ router.post('/login', authController.login);
 // router.get('/users', authController.getAllUsers);
 router.get('/users/:role', authController.getUsersByRole); 
 
+router.get('/users', authController.getAllUsers);
 
 
 router.get("/user/:email", authController.getUserByEmail);
