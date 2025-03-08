@@ -16,5 +16,9 @@ router.get("/user/:email", authController.getUserByEmail);
 router.put("/user/update", authController.updateUser);
 router.delete("/user/delete/:email", authController.deleteUser);
 
+router.get('/userDetails/:email', authController.getUserDetailsByEmail);
+
+// router.get('/api/auth/userDetails', authController.getUserDetails);
+
 
 module.exports = router;

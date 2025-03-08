@@ -170,3 +170,27 @@ exports.deleteUser = async (req, res) => {
     }
 
 };
+
+
+
+
+exports.getUserDetailsByEmail = async (req, res) => {
+    try {
+        const { email } = req.params; // Ensure email is passed
+        if (!email) return res.status(400).json({ message: "Email is required" });
+
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        res.json({
+            fullName: user.fullName,
+            email: user.email,
+            selectedHospital: user.hospital,
+            selectedSpecialty: user.specialty,
+            selectedTrainingYear: user.trainingYear,
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
