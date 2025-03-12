@@ -23,19 +23,10 @@ const userSchema = new mongoose.Schema({
 
 
  
-
-  country: {
-    type: String,
-    required: true,
-  },
-  trainingYear: {
-    type: String,
-    required: true,
-  },
-  hospital: {
-    type: String,
-    required: true,
-  },
+  country: { type: String, required: function() { return this.role === 'student'; } },
+  trainingYear: { type: String, required: function() { return this.role === 'student'; } },
+  hospital: { type: String, required: function() { return this.role === 'student'; } },
+  
   specialty: {
     type: String,
     required: true,
