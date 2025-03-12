@@ -2,44 +2,61 @@ const User = require('../models/User'); // Adjust the path to your User model
 
 // Signup method
 exports.signup = async (req, res) => {
+    // console.log("🔹 Received Data at Backend:", req.body);
+
     const { fullName, email, password, country, trainingYear, hospital, specialty, role } = req.body;
 
-    if (!email || !password || !country || !hospital || !specialty || !role) {
+    if (!email || !password || !specialty || !role) {
+        // console.log("❌ Backend Validation Failed: Missing fields");
         return res.status(400).json({ error: "All fields are required" });
     }
 
     if (role !== 'student' && role !== 'doctor') {
+        // console.log("❌ Invalid role:", role);
         return res.status(400).json({ error: "Invalid role. Choose either 'student' or 'doctor'." });
     }
 
-    // Ensure trainingYear is provided for students
-    if (role === 'student' && !trainingYear) {
-        return res.status(400).json({ error: "Training year is required for students." });
+    if (role === 'student' && (!trainingYear || !country || !hospital)) {
+        // console.log("❌ Student-specific fields missing");
+        return res.status(400).json({ error: "Training year, country, and hospital are required for students." });
     }
+
+    // ✅ Define userData before using it
+    const userData = {
+        fullName,
+        email,
+        password,
+        specialty,
+        role,
+    };
+
+    // Only add student fields if the user is a student
+    if (role === "student") {
+        userData.country = country;
+        userData.trainingYear = trainingYear;
+        userData.hospital = hospital;
+    }
+
+    // console.log("✅ Data being saved to MongoDB:", userData);
 
     try {
         const existingUser = await User.findOne({ email });
         if (existingUser) {
+            // console.log("❌ Email already exists:", email);
             return res.status(409).json({ error: "Email is already registered" });
         }
 
-        const user = new User({
-            fullName,
-            email,
-            password, // Password should ideally be hashed
-            country,
-            trainingYear: role === 'student' ? trainingYear : null, // Only store trainingYear for students
-            hospital,
-            specialty,
-            role,
-        });
+        const user = new User(userData);
         await user.save();
+        // console.log("✅ User registered successfully!");
         res.status(201).json({ message: "User registered successfully" });
     } catch (error) {
-        console.error(error);
+        // console.error("❌ Server Error:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
+
 
 // Login method
 exports.login = async (req, res) => {
@@ -59,7 +76,12 @@ exports.login = async (req, res) => {
             return res.status(401).json({ error: "Invalid credentials" });
         }
 
-        res.status(200).json({ message: `Login successful as`, user });
+        res.status(200).json({ 
+            message: "Login successful", 
+            role: user.role, 
+            user 
+        });
+        
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Internal Server Error" });
@@ -94,20 +116,24 @@ exports.getAllUsers = async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
-
 exports.getUsersByRole = async (req, res) => {
-    const { role } = req.params; // role should be "student" or "doctor"
+    const { role } = req.params;
+    const specialtyFilter = req.query.specialty; // ✅ Get specialty filter from query params
 
-    if (role !== 'student' && role !== 'doctor') {
+    if (role !== "student" && role !== "doctor") {
         return res.status(400).json({ error: "Invalid role specified" });
     }
 
     try {
-        const users = await User.find({ role }, "fullName email role");
+        let query = { role: "student" }; // ✅ Only fetch students
+        if (specialtyFilter) {
+            query.specialty = specialtyFilter; // ✅ Filter by specialty
+        }
+
+        const users = await User.find(query, "fullName email role specialty");
         res.status(200).json(users);
     } catch (error) {
-        console.error("Error fetching users:", error);
-
+        console.error("❌ Error fetching users:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
