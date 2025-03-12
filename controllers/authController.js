@@ -109,13 +109,14 @@ exports.getUserByEmail = async (req, res) => {
 // Fetch all users
 exports.getAllUsers = async (req, res) => {
     try {
-        const users = await User.find({}, "fullName email role"); // Fetch all users
+        const users = await User.find({ role: { $ne: "doctor" } }, "fullName email role"); // Exclude doctors
         res.status(200).json(users);
     } catch (error) {
         console.error("Error fetching users:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
 exports.getUsersByRole = async (req, res) => {
     const { role } = req.params;
     const specialtyFilter = req.query.specialty; // ✅ Get specialty filter from query params
