@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Category = require('../models/Category');
 
 // Add new category
@@ -40,6 +41,34 @@ exports.getCategories = async (req, res) => {
         res.status(200).json(categories);
     } catch (error) {
         console.error(error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+
+exports.deleteCategory = async (req, res) => {
+    try {
+        const { id } = req.params;
+        console.log("Received request to delete category with ID:", id);
+
+        // ✅ Check if the provided ID is a valid MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            console.error("Invalid ObjectId format:", id);
+            return res.status(400).json({ error: "Invalid category ID format" });
+        }
+
+        // ✅ Find and delete the category
+        const deletedCategory = await Category.findByIdAndDelete(id);
+
+        if (!deletedCategory) {
+            console.error("Category not found with ID:", id);
+            return res.status(404).json({ error: "Category not found" });
+        }
+
+        console.log("Category deleted successfully:", deletedCategory);
+        res.status(200).json({ message: "Category deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting category:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
