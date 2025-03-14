@@ -1,10 +1,11 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const logEntrySchema = new mongoose.Schema({
-    email: { type: String, required: true }, // 🔹 Store email instead of userId
-    category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
-    data: { type: mongoose.Schema.Types.Mixed, required: true }, // Stores category-specific fields dynamically
+    email: { type: String, required: true },
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },  // ✅ Keep ObjectId for querying
+    categoryName: { type: String, required: true },  // ✅ Store the name as well
+    data: { type: Object, required: true },
     createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('LogEntry', logEntrySchema);
+module.exports = mongoose.model("LogEntry", logEntrySchema);
