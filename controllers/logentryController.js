@@ -43,7 +43,7 @@ exports.getEntries = async (req, res) => {
     const { email } = req.params;
 
     try {
-        console.log("🔹 Fetching entries for:", email);
+        // console.log("🔹 Fetching entries for:", email);
 
         const entries = await LogEntry.find({ email });
 
@@ -53,6 +53,8 @@ exports.getEntries = async (req, res) => {
             email: entry.email,
             category: entry.categoryName,  // ✅ Now category name is included
             data: entry.data,
+            comments: entry.comments || "",  // ✅ Include comments (if any)
+            score: entry.score !== undefined ? entry.score : null,  // ✅ Include score (if any)
             createdAt: entry.createdAt,
         }));
 
@@ -63,3 +65,28 @@ exports.getEntries = async (req, res) => {
     }
 };
 
+// ✅ Add new API to update comments & score for a log entry
+exports.updateEntry = async (req, res) => {
+    const { entryId, comments, score } = req.body;
+
+    if (!entryId) {
+        return res.status(400).json({ error: "Entry ID is required" });
+    }
+
+    try {
+        const updatedEntry = await LogEntry.findByIdAndUpdate(
+            entryId,
+            { comments, score },
+            { new: true }  // Return updated document
+        );
+
+        if (!updatedEntry) {
+            return res.status(404).json({ error: "Log entry not found" });
+        }
+
+        res.status(200).json({ message: "Log entry updated", updatedEntry });
+    } catch (error) {
+        console.error("Error updating log entry:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
