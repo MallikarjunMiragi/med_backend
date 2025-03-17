@@ -90,3 +90,30 @@ exports.updateEntry = async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+exports.getEntriesByReviewStatus = async (req, res) => {
+    const { email } = req.params;
+
+    try {
+        const entries = await LogEntry.find({ email });
+
+        // ✅ Separate reviewed & not reviewed
+        const reviewedEntries = [];
+        const notReviewedEntries = [];
+
+        entries.forEach(entry => {
+            if (entry.comments && entry.score !== null) {
+                reviewedEntries.push(entry);
+            } else {
+                notReviewedEntries.push(entry);
+            }
+        });
+
+        res.status(200).json({
+            reviewed: reviewedEntries,
+            notReviewed: notReviewedEntries,
+        });
+    } catch (error) {
+        console.error("❌ Server error:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
