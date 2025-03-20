@@ -1,4 +1,7 @@
 const express = require('express');
+const multer = require("multer");
+const path = require("path");
+
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors'); // Import cors
@@ -9,6 +12,18 @@ const categoryRoutes = require('./routes/categoryRoutes');
 dotenv.config(); // Load environment variables from .env file
 
 const app = express();
+const storage = multer.diskStorage({
+  destination: "./uploads/",
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname)); // Unique filename
+  },
+});
+
+const upload = multer({ storage: storage });
+
+// Serve uploaded files statically
+app.use("/uploads", express.static("uploads"));
+
 
 // Enable CORS
 app.use(cors({
