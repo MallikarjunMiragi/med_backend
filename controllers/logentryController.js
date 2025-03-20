@@ -3,14 +3,17 @@ const Category = require("../models/Category");
 
 // Add log entry to a category
 exports.addEntry = async (req, res) => {
-    const { email, categoryId, data } = req.body;
-
-    console.log("🔹 Received request:", req.body);
-
-    if (!email || !categoryId || !data) {
-        console.error("❌ Missing required fields:", { email, categoryId, data });
-        return res.status(400).json({ error: "Email, categoryId, and data are required" });
+    // const { email, categoryId, data } = req.body;
+    const { email, categoryId, name } = req.body;
+    const file = req.file ? req.file.filename : null;
+    
+    console.log("🔹 Received request:", { email, categoryId, name, file });
+    
+    if (!email || !categoryId || !name) { // ✅ Check "name" instead of "data"
+        console.error("❌ Missing required fields:", { email, categoryId, name });
+        return res.status(400).json({ error: "Email, categoryId, and name are required" });
     }
+    
 
     try {
         const category = await Category.findById(categoryId);
@@ -19,13 +22,25 @@ exports.addEntry = async (req, res) => {
             return res.status(404).json({ error: "Category not found" });
         }
 
-        // ✅ Save log entry with both categoryId and categoryName
+        // // ✅ Save log entry with both categoryId and categoryName
+        // const newEntry = new LogEntry({
+        //     email,
+        //     categoryId: category._id,  // ✅ Store as ObjectId
+        //     categoryName: category.name,  // ✅ Store category name separately
+        //     data,
+        // });
         const newEntry = new LogEntry({
             email,
-            categoryId: category._id,  // ✅ Store as ObjectId
-            categoryName: category.name,  // ✅ Store category name separately
-            data,
+            categoryId: category._id,
+            categoryName: category.name,
+            data: {
+                name,
+                file: file ? `/uploads/${file}` : null, // ✅ Fixed syntax
+            },
         });
+        
+        
+        
 
         await newEntry.save();
 

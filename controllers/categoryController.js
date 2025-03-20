@@ -1,5 +1,17 @@
 const mongoose = require("mongoose");
 const Category = require('../models/Category');
+exports.checkCategoryExists = async (req, res) => {
+    try {
+        const { name } = req.query;
+        if (!name) return res.status(400).json({ error: "Category name is required" });
+
+        const existingCategory = await Category.findOne({ name });
+        res.status(200).json({ exists: !!existingCategory });
+    } catch (error) {
+        console.error("Error checking category existence:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
 
 // Add new category
 exports.addCategory = async (req, res) => {
@@ -49,11 +61,11 @@ exports.getCategories = async (req, res) => {
 exports.deleteCategory = async (req, res) => {
     try {
         const { id } = req.params;
-        console.log("Received request to delete category with ID:", id);
+        //console.log("Received request to delete category with ID:", id);
 
         // ✅ Check if the provided ID is a valid MongoDB ObjectId
         if (!mongoose.Types.ObjectId.isValid(id)) {
-            console.error("Invalid ObjectId format:", id);
+            //console.error("Invalid ObjectId format:", id);
             return res.status(400).json({ error: "Invalid category ID format" });
         }
 
@@ -61,14 +73,14 @@ exports.deleteCategory = async (req, res) => {
         const deletedCategory = await Category.findByIdAndDelete(id);
 
         if (!deletedCategory) {
-            console.error("Category not found with ID:", id);
+            //console.error("Category not found with ID:", id);
             return res.status(404).json({ error: "Category not found" });
         }
 
-        console.log("Category deleted successfully:", deletedCategory);
+        //console.log("Category deleted successfully:", deletedCategory);
         res.status(200).json({ message: "Category deleted successfully" });
     } catch (error) {
-        console.error("Error deleting category:", error);
+        //console.error("Error deleting category:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
