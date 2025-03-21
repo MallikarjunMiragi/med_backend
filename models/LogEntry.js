@@ -5,10 +5,7 @@ const logEntrySchema = new mongoose.Schema({
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },  // ✅ Keep ObjectId for querying
     categoryName: { type: String, required: true },  // ✅ Store the name as well
     //data: { type: Object, required: true },
-    data: {
-        name: String,
-        file: String, // ✅ Store file path
-    },
+    data: { type: mongoose.Schema.Types.Mixed, required: true },
     
     comments: { type: String, default: "" },  // ✅ Add comments field
     score: { type: Number, default: null },   // ✅ Add score field

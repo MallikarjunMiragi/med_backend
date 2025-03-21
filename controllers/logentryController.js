@@ -3,54 +3,49 @@ const Category = require("../models/Category");
 
 // Add log entry to a category
 exports.addEntry = async (req, res) => {
-    // const { email, categoryId, data } = req.body;
-    const { email, categoryId, name } = req.body;
-    const file = req.file ? req.file.filename : null;
+    //console.log("🔹 Received request:", JSON.stringify(req.body, null, 2));
+    //console.log("🔹 Uploaded file:", req.file);
+
+    const { email, categoryId, ...otherFields } = req.body;
+    const files = req.files ? req.files.map((file) => `/uploads/${file.filename}`) : []; // ✅ Handle multiple files
     
-    console.log("🔹 Received request:", { email, categoryId, name, file });
-    
-    if (!email || !categoryId || !name) { // ✅ Check "name" instead of "data"
-        console.error("❌ Missing required fields:", { email, categoryId, name });
-        return res.status(400).json({ error: "Email, categoryId, and name are required" });
+
+    if (!email || !categoryId) {
+        //console.error("❌ Missing required fields:", { email, categoryId });
+        return res.status(400).json({ error: "Email and categoryId are required" });
     }
-    
 
     try {
         const category = await Category.findById(categoryId);
         if (!category) {
-            console.error("❌ Category not found:", categoryId);
+            //console.error("❌ Category not found:", categoryId);
             return res.status(404).json({ error: "Category not found" });
         }
 
-        // // ✅ Save log entry with both categoryId and categoryName
-        // const newEntry = new LogEntry({
-        //     email,
-        //     categoryId: category._id,  // ✅ Store as ObjectId
-        //     categoryName: category.name,  // ✅ Store category name separately
-        //     data,
-        // });
+        // ✅ Store all dynamic fields including files
+        const data = { ...otherFields };
+        req.files.forEach((file) => {
+            const fieldName = file.fieldname; // ✅ Get the field name from the file
+            data[fieldName] = `/uploads/${file.filename}`; // ✅ Store it properly
+        });
+        
+
         const newEntry = new LogEntry({
             email,
             categoryId: category._id,
             categoryName: category.name,
-            data: {
-                name,
-                file: file ? `/uploads/${file}` : null, // ✅ Fixed syntax
-            },
+            data, // ✅ Store all dynamic fields
         });
-        
-        
-        
 
         await newEntry.save();
-
-        console.log("✅ Log entry saved:", newEntry);
+        //console.log("✅ Log entry saved:", newEntry);
         res.status(201).json({ message: "Log entry added successfully", newEntry });
     } catch (error) {
-        console.error("❌ Server error:", error);
+        //console.error("❌ Server error:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
 
 
 // Get logbook entries for a user
