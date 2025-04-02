@@ -47,40 +47,87 @@ exports.addCategory = async (req, res) => {
 };
 
 // Get all categories
+// Get all categories (Ensure default ones exist)
+
 exports.getCategories = async (req, res) => {
     try {
-        const categories = await Category.find();
-        res.status(200).json(categories);
+        // Fetch dynamic categories from MongoDB with `_id` included
+        const dynamicCategories = await Category.find({}, "_id name fields");
+
+        // Default categories
+        const defaultCategories = [
+            { name: "Admissions", fields: [{ name: "Patient Name", type: "text" }, { name: "Admission Date", type: "date" }] },
+            { name: "CPD", fields: [{ name: "Activity Name", type: "text" }, { name: "Completion Date", type: "date" }] },
+            { name: "POCUS", fields: [{ name: "Scan Type", type: "text" }, { name: "Result", type: "text" }] },
+            { name: "Procedures", fields: [{ name: "Procedure Name", type: "text" }, { name: "Outcome", type: "text" }] }
+        ];
+
+        // Insert missing default categories into MongoDB
+        for (const defaultCat of defaultCategories) {
+            const existingCategory = await Category.findOne({ name: defaultCat.name });
+            if (!existingCategory) {
+                const newCategory = await Category.create(defaultCat);
+                defaultCat._id = newCategory._id; // Store `_id` after creation
+            } else {
+                defaultCat._id = existingCategory._id;
+            }
+        }
+
+        // Filter out duplicates
+        const filteredDynamicCategories = dynamicCategories.filter(
+            (cat) => !defaultCategories.some((defaultCat) => defaultCat.name === cat.name)
+        );
+
+        // Convert default categories to **mutable objects** before merging
+        const mutableDefaultCategories = defaultCategories.map((cat) => ({ ...cat }));
+
+        // Merge categories and return
+        const allCategories = [...mutableDefaultCategories, ...filteredDynamicCategories];
+
+        res.status(200).json(allCategories);
     } catch (error) {
-        console.error(error);
+        console.error("Error fetching categories:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
 
 
+
+
+const getAllCategories = async (req, res) => {
+    try {
+        const categories = await Category.find({}, "_id name fields"); // ✅ Ensure _id is included
+        res.json(categories);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch categories" });
+    }
+};
+
+
+
+
 exports.deleteCategory = async (req, res) => {
     try {
         const { id } = req.params;
-        //console.log("Received request to delete category with ID:", id);
 
-        // ✅ Check if the provided ID is a valid MongoDB ObjectId
         if (!mongoose.Types.ObjectId.isValid(id)) {
-            //console.error("Invalid ObjectId format:", id);
             return res.status(400).json({ error: "Invalid category ID format" });
         }
 
-        // ✅ Find and delete the category
-        const deletedCategory = await Category.findByIdAndDelete(id);
-
-        if (!deletedCategory) {
-            //console.error("Category not found with ID:", id);
+        const category = await Category.findById(id);
+        if (!category) {
             return res.status(404).json({ error: "Category not found" });
         }
 
-        //console.log("Category deleted successfully:", deletedCategory);
+        // Prevent deletion of default categories
+        const defaultCategories = ["Admissions", "CPD", "POCUS", "Procedures"];
+        if (defaultCategories.includes(category.name)) {
+            return res.status(403).json({ error: "Cannot delete default categories" });
+        }
+
+        await Category.findByIdAndDelete(id);
         res.status(200).json({ message: "Category deleted successfully" });
     } catch (error) {
-        //console.error("Error deleting category:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
