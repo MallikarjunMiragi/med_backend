@@ -185,63 +185,136 @@ exports.addCategory = async (req, res) => {
 // Get all categories
 // Get all categories (Ensure default ones exist)
 
-exports.getCategories = async (req, res) => {
-    try {
-        // Fetch dynamic categories from MongoDB with `_id` included
-        //const dynamicCategories = await Category.find({}, "_id name fields");
-        const { email } = req.query;
+// exports.getCategories = async (req, res) => {
+//     try {
+//         // Fetch dynamic categories from MongoDB with `_id` included
+//         //const dynamicCategories = await Category.find({}, "_id name fields");
+//         const { email } = req.query;
 
-        let dynamicCategories = [];
+//         let dynamicCategories = [];
 
-        if (email) {
-          // Fetch only categories created by this user
-          dynamicCategories = await Category.find({ createdBy: email }, "_id name fields");
-        } else {
-          // If no email is passed, fetch nothing (just show default categories)
-          dynamicCategories = [];
-        }
+//         if (email) {
+//           // Fetch only categories created by this user
+//           dynamicCategories = await Category.find({ createdBy: email }, "_id name fields");
+//         } else {
+//           // If no email is passed, fetch nothing (just show default categories)
+//           dynamicCategories = [];
+//         }
         
 
 
-        // Default categories
-        const defaultCategories = [
-            { name: "Admissions", fields: [{ name: "Patient Name", type: "text" }, { name: "Admission Date", type: "date" }] },
-            { name: "CPD", fields: [{ name: "Activity Name", type: "text" }, { name: "Completion Date", type: "date" }] },
-            { name: "POCUS", fields: [{ name: "Scan Type", type: "text" }, { name: "Result", type: "text" }] },
-            { name: "Procedures", fields: [{ name: "Procedure Name", type: "text" }, { name: "Outcome", type: "text" }] }
-        ];
+//         // Default categories
+//         const defaultCategories = [
+//             { name: "Admissions", fields: [{ name: "Patient Name", type: "text" }, { name: "Admission Date", type: "date" }] },
+//             { name: "CPD", fields: [{ name: "Activity Name", type: "text" }, { name: "Completion Date", type: "date" }] },
+//             { name: "POCUS", fields: [{ name: "Scan Type", type: "text" }, { name: "Result", type: "text" }] },
+//             { name: "Procedures", fields: [{ name: "Procedure Name", type: "text" }, { name: "Outcome", type: "text" }] }
+//         ];
 
-        // Insert missing default categories into MongoDB
-        for (const defaultCat of defaultCategories) {
-            const existingCategory = await Category.findOne({ name: defaultCat.name });
-            if (!existingCategory) {
-                const newCategory = await Category.create(defaultCat);
-                defaultCat._id = newCategory._id; // Store `_id` after creation
-            } else {
-                defaultCat._id = existingCategory._id;
-            }
-        }
+//         // Insert missing default categories into MongoDB
+//         for (const defaultCat of defaultCategories) {
+//             const existingCategory = await Category.findOne({ name: defaultCat.name });
+//             if (!existingCategory) {
+//                 const newCategory = await Category.create(defaultCat);
+//                 defaultCat._id = newCategory._id; // Store `_id` after creation
+//             } else {
+//                 defaultCat._id = existingCategory._id;
+//             }
+//         }
 
-        // Filter out duplicates
-        const filteredDynamicCategories = dynamicCategories.filter(
-            (cat) => !defaultCategories.some((defaultCat) => defaultCat.name === cat.name)
+//         // Filter out duplicates
+//         const filteredDynamicCategories = dynamicCategories.filter(
+//             (cat) => !defaultCategories.some((defaultCat) => defaultCat.name === cat.name)
+//         );
+
+//         // Convert default categories to **mutable objects** before merging
+//         const mutableDefaultCategories = defaultCategories.map((cat) => ({ ...cat }));
+
+//         // Merge categories and return
+//         const allCategories = [...mutableDefaultCategories, ...filteredDynamicCategories];
+
+//         res.status(200).json(allCategories);
+//     } catch (error) {
+//         console.error("Error fetching categories:", error);
+//         res.status(500).json({ error: "Internal Server Error" });
+//     }
+// };
+
+
+exports.getCategories = async (req, res) => {
+    try {
+      const rawEmail = req.query.email || "";
+      const email = rawEmail.trim().toLowerCase();
+  
+      //console.log("📩 Email received for category fetch:", email);
+  
+      let dynamicCategories = [];
+  
+      if (email) {
+        // Match email exactly (case-insensitive)
+        dynamicCategories = await Category.find(
+          { createdBy: { $regex: `^${email}$`, $options: "i" } },
+          "_id name fields createdBy"
         );
-
-        // Convert default categories to **mutable objects** before merging
-        const mutableDefaultCategories = defaultCategories.map((cat) => ({ ...cat }));
-
-        // Merge categories and return
-        const allCategories = [...mutableDefaultCategories, ...filteredDynamicCategories];
-
-        res.status(200).json(allCategories);
+      }
+  
+      // Default categories
+      const defaultCategories = [
+        {
+          name: "Admissions",
+          fields: [
+            { name: "Patient Name", type: "text" },
+            { name: "Admission Date", type: "date" },
+          ],
+        },
+        {
+          name: "CPD",
+          fields: [
+            { name: "Activity Name", type: "text" },
+            { name: "Completion Date", type: "date" },
+          ],
+        },
+        {
+          name: "POCUS",
+          fields: [
+            { name: "Scan Type", type: "text" },
+            { name: "Result", type: "text" },
+          ],
+        },
+        {
+          name: "Procedures",
+          fields: [
+            { name: "Procedure Name", type: "text" },
+            { name: "Outcome", type: "text" },
+          ],
+        },
+      ];
+  
+      // Insert missing defaults (only once)
+      for (const defaultCat of defaultCategories) {
+        const exists = await Category.findOne({ name: defaultCat.name });
+        if (!exists) {
+          const created = await Category.create(defaultCat);
+          defaultCat._id = created._id;
+        } else {
+          defaultCat._id = exists._id;
+        }
+      }
+  
+      // Filter duplicates by name
+      const filtered = dynamicCategories.filter(
+        (cat) => !defaultCategories.some((d) => d.name === cat.name)
+      );
+  
+      const allCategories = [...defaultCategories, ...filtered];
+      //console.log(`✅ Total categories returned: ${allCategories.length}`);
+      res.status(200).json(allCategories);
     } catch (error) {
-        console.error("Error fetching categories:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+      //console.error("❌ Error fetching categories:", error);
+      res.status(500).json({ error: "Internal Server Error" });
     }
-};
-
-
-
+  };
+  
 
 const getAllCategories = async (req, res) => {
     try {
