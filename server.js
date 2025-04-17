@@ -8,7 +8,7 @@ const cors = require('cors'); // Import cors
 const authRoutes = require('./routes/authRoutes'); 
 const logentryRoutes = require('./routes/logentryRoutes'); 
 const categoryRoutes = require('./routes/categoryRoutes');
-
+const uploadRoute = require('./routes/uploadRoute'); 
 dotenv.config(); // Load environment variables from .env file
 
 const app = express();
@@ -35,7 +35,7 @@ app.use(cors({
 
 // Middleware to parse JSON body data
 app.use(express.json());
-
+app.use(express.urlencoded({ extended: true }));
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('Connected to MongoDB'))
@@ -43,6 +43,15 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
 
 // Use API routes
 app.use('/api/auth', authRoutes);
+
+// Use the upload route
+app.use('/api', uploadRoute);
+
+// Optional: a simple test route
+app.get('/', (req, res) => {
+  res.send('API is working!');
+});
+
 app.use('/api/logentry', logentryRoutes);
 app.use('/api/category', categoryRoutes);
 
