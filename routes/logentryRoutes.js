@@ -15,7 +15,9 @@ const router = express.Router();
 const logbookController = require('../controllers/logentryController');
 
 //router.post('/add', logbookController.addEntry);
-router.post('/add', upload.any(), logbookController.addEntry);
+const memoryStorage = multer.memoryStorage();
+const cloudUpload = multer({ storage: memoryStorage });
+router.post('/add', cloudUpload.any(), logbookController.addEntry);
 
 
 

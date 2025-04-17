@@ -89,11 +89,37 @@ exports.addEntry = async (req, res) => {
 
         // ✅ Store all dynamic fields including file paths
         const data = { ...otherFields };
-        req.files.forEach((file) => {
-            const fieldName = file.fieldname; // ✅ Get the field name from the file
-            data[fieldName] = `/uploads/${file.filename}`; // ✅ Store it properly
-        });
-
+        const streamifier = require("streamifier");
+        const cloudinary = require("../config/cloudinary");
+        
+        for (const file of req.files) {
+            const fieldName = file.fieldname;
+        
+            const streamUpload = () => {
+                return new Promise((resolve, reject) => {
+                    const stream = cloudinary.uploader.upload_stream(
+                        {
+                            folder: 'your_folder_name', // optional: change as needed
+                            resource_type: 'auto'
+                        },
+                        (error, result) => {
+                            if (result) resolve(result);
+                            else reject(error);
+                        }
+                    );
+                    streamifier.createReadStream(file.buffer).pipe(stream);
+                });
+            };
+        
+            try {
+                const result = await streamUpload();
+                data[fieldName] = result.secure_url;
+            } catch (error) {
+                console.error(`❌ Failed to upload ${fieldName} to Cloudinary:`, error);
+                return res.status(500).json({ error: `Failed to upload file: ${fieldName}` });
+            }
+        }
+        
         const newEntry = new LogEntry({
             email,
             categoryId: category._id,
