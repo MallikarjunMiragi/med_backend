@@ -15,9 +15,12 @@ router.get('/users', authController.getAllUsers);
 
 router.get("/user/:email", authController.getUserByEmail);
 router.put("/user/update", authController.updateUser);
+router.put("/user/update-status", authController.updateUserStatus);
 router.delete("/user/delete/:email", authController.deleteUser);
 
 router.get('/userDetails/:email', authController.getUserDetailsByEmail);
+router.get('/users/all', authController.getAllRegisteredUsers);
+
 
 // router.get('/api/auth/userDetails', authController.getUserDetails);
 

@@ -28,6 +28,7 @@ exports.signup = async (req, res) => {
         password,
         specialty,
         role,
+        status: "pending",    // default status
     };
 
     // Only add student fields if the user is a student
@@ -62,12 +63,13 @@ exports.signup = async (req, res) => {
 exports.login = async (req, res) => {
     const { email, password } = req.body;
 
-    if (!email || !password ) {
-        return res.status(400).json({ error: "Email, password, and role are required" });
+    if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
     }
 
     try {
-        const user = await User.findOne({ email }); // Ensure the user is logging in with the correct role
+        const user = await User.findOne({ email });
+
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
@@ -76,17 +78,27 @@ exports.login = async (req, res) => {
             return res.status(401).json({ error: "Invalid credentials" });
         }
 
-        res.status(200).json({ 
-            message: "Login successful", 
-            role: user.role, 
-            user 
+        // ✅ Check status before allowing login
+        if (user.status === "rejected") {
+            return res.status(403).json({ error: "Your registration was rejected by admin. Please contact the Admin" });
+        }
+
+        if (user.status === "pending") {
+            return res.status(403).json({ error: "Your registration is still pending approval. Please contact the Admin" });
+        }
+
+        res.status(200).json({
+            message: "Login successful",
+            role: user.role,
+            user
         });
-        
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
 
 
 
@@ -106,6 +118,7 @@ exports.getUserByEmail = async (req, res) => {
         console.error("Error fetching user:", error);
     }
 }
+
 // Fetch all users
 exports.getAllUsers = async (req, res) => {
     try {
@@ -149,6 +162,17 @@ exports.getUsersByRole = async (req, res) => {
 };
 
 
+exports.getAllRegisteredUsers = async (req, res) => {
+    try {
+        const users = await User.find({}, "fullName email role specialty status");
+        res.status(200).json(users);
+    } catch (error) {
+        console.error("Error fetching all users:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+
 
 // Update user details
 exports.updateUser = async (req, res) => {
@@ -182,6 +206,32 @@ exports.updateUser = async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
+exports.updateUserStatus = async (req, res) => {
+    const { email, status } = req.body;
+  
+    if (!email || !status) {
+      return res.status(400).json({ error: "Email and status are required." });
+    }
+  
+    try {
+      const user = await User.findOneAndUpdate(
+        { email },
+        { status },
+        { new: true }
+      );
+  
+      if (!user) {
+        return res.status(404).json({ error: "User not found." });
+      }
+  
+      res.status(200).json({ message: `User status updated to ${status}` });
+    } catch (error) {
+      console.error("Error updating user status:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+  
 
 
 // Delete user account
