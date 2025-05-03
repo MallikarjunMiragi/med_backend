@@ -1,92 +1,151 @@
-const User = require('../models/User'); // Adjust the path to your User model
+const bcrypt = require("bcryptjs"); // Only import bcrypt once
+const argon2 = require("argon2"); // Import argon2 once
+const User = require('../models/User'); 
+const PendingUser = require("../models/PendingUser"); 
+const UserOtpVerification = require("../models/UserOtpVerification"); 
+const { sendEmail } = require("../services/emailService.js");
+const jwt = require('jsonwebtoken');  
 
-// Signup method
+
+
 exports.signup = async (req, res) => {
-    // console.log("🔹 Received Data at Backend:", req.body);
+  const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // Generate a 6-digit OTP
 
-    const { fullName, email, password, country, trainingYear, hospital, specialty, role } = req.body;
+  const {
+    fullName,
+    email,
+    password,
+    country,
+    trainingYear,
+    hospital,
+    specialty,
+    role
+  } = req.body;
 
-    if (!email || !password || !specialty || !role) {
-        // console.log("❌ Backend Validation Failed: Missing fields");
-        return res.status(400).json({ error: "All fields are required" });
+  try {
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: "Email already exists." });
     }
 
-    if (role !== 'student' && role !== 'doctor') {
-        // console.log("❌ Invalid role:", role);
-        return res.status(400).json({ error: "Invalid role. Choose either 'student' or 'doctor'." });
+    // Validate required fields
+    if (!fullName || !email || !password || !specialty || !role) {
+      return res.status(400).json({
+        success: false,
+        message: "All required fields (fullName, email, password, specialty, role) must be provided."
+      });
     }
 
-    if (role === 'student' && (!trainingYear || !country || !hospital)) {
-        // console.log("❌ Student-specific fields missing");
-        return res.status(400).json({ error: "Training year, country, and hospital are required for students." });
+    // Validate role
+    if (role !== "student" && role !== "doctor") {
+      return res.status(400).json({ success: false, message: "Invalid role. Choose 'student' or 'doctor'." });
     }
 
-    // ✅ Define userData before using it
-    const userData = {
-        fullName,
-        email,
-        password,
-        specialty,
-        role,
+    // Additional validation for student role
+    if (role === "student" && (!trainingYear || !country || !hospital)) {
+      return res.status(400).json({
+        success: false,
+        message: "Training year, country, and hospital are required for students."
+      });
+    }
+
+    // Hash the password and OTP
+    const hashedPassword = await argon2.hash(password);
+    const hashedOTP = await bcrypt.hash(verificationCode, 10);
+
+    // Prepare PendingUser data
+    const pendingUserData = {
+      fullName,
+      email,
+      password: hashedPassword,
+      specialty,
+      role,
     };
 
-    // Only add student fields if the user is a student
     if (role === "student") {
-        userData.country = country;
-        userData.trainingYear = trainingYear;
-        userData.hospital = hospital;
+      pendingUserData.country = country;
+      pendingUserData.trainingYear = trainingYear;
+      pendingUserData.hospital = hospital;
     }
 
-    // console.log("✅ Data being saved to MongoDB:", userData);
-
+    // Save the user to PendingUser collection
     try {
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            // console.log("❌ Email already exists:", email);
-            return res.status(409).json({ error: "Email is already registered" });
-        }
-
-        const user = new User(userData);
-        await user.save();
-        // console.log("✅ User registered successfully!");
-        res.status(201).json({ message: "User registered successfully" });
-    } catch (error) {
-        // console.error("❌ Server Error:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+      const newPendingUser = new PendingUser(pendingUserData);
+      await newPendingUser.save();
+    } catch (saveErr) {
+      console.error("❌ Failed to save PendingUser:", saveErr);
+      return res.status(500).json({ success: false, message: "Failed to save user data." });
     }
+
+    // Save OTP separately for email verification
+    try {
+      const userOtpVerification = new UserOtpVerification({
+        email,
+        otp: hashedOTP,
+        expiresAt: Date.now() + 10 * 60 * 1000, // OTP expires in 10 minutes
+      });
+      await userOtpVerification.save();
+    } catch (otpSaveErr) {
+      console.error("❌ Failed to save OTP:", otpSaveErr);
+      return res.status(500).json({ success: false, message: "Failed to save OTP." });
+    }
+
+    // Send OTP email to the user
+    try {
+      const emailSent = await sendEmail(email, "Verify Your Email", verificationCode, "verifyOTP");
+      if (!emailSent) {
+        return res.status(500).json({ success: false, message: "Failed to send OTP email." });
+      }
+    } catch (emailErr) {
+      console.error("❌ Failed to send OTP email:", emailErr);
+      return res.status(500).json({ success: false, message: "Failed to send OTP email." });
+    }
+
+    // Send success response
+    res.status(200).json({ success: true, message: "OTP sent. Please verify your email." });
+
+  } catch (error) {
+    console.error("Signup error:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
 };
 
 
 
-// Login method
 exports.login = async (req, res) => {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
-    if (!email || !password ) {
-        return res.status(400).json({ error: "Email, password, and role are required" });
+  console.log('Received email:', email);
+  console.log('Received password:', password);
+
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
     }
 
-    try {
-        const user = await User.findOne({ email }); // Ensure the user is logging in with the correct role
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        if (user.password !== password) {
-            return res.status(401).json({ error: "Invalid credentials" });
-        }
-
-        res.status(200).json({ 
-            message: "Login successful", 
-            role: user.role, 
-            user 
-        });
-        
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Internal Server Error" });
+    const isMatch = await argon2.verify(user.password, password); // 👈 using argon2.verify here!
+    if (!isMatch) {
+      return res.status(401).json({ error: "Invalid credentials" });
     }
+
+    res.status(200).json({ 
+      message: "Login successful", 
+      role: user.role, 
+      user 
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 };
+
 
 
 
@@ -208,8 +267,6 @@ exports.deleteUser = async (req, res) => {
 };
 
 
-
-
 exports.getUserDetailsByEmail = async (req, res) => {
     try {
         const { email } = req.params; // Ensure email is passed
@@ -230,3 +287,135 @@ exports.getUserDetailsByEmail = async (req, res) => {
     }
 };
 
+
+exports.verifyOTP = async (req, res) => {
+    const { email, otp } = req.body;
+    console.log("Incoming verifyOTP request body:", req.body);
+  
+    try {
+      const otpRecord = await UserOtpVerification.findOne({ email });
+      if (!otpRecord) {
+        return res.status(400).json({ success: false, message: "No pending verification found." });
+      }
+  
+      if (otpRecord.expiresAt < Date.now()) {
+        await UserOtpVerification.updateOne({ email }, { $unset: { otp: "" } });
+        return res.status(400).json({ success: false, message: "OTP expired. Request a new one." });
+      }
+  
+      const validOtp = await bcrypt.compare(otp, otpRecord.otp);
+      if (!validOtp) {
+        return res.status(400).json({ success: false, message: "Invalid OTP. Try again." });
+      }
+  
+      const pendingUser = await PendingUser.findOne({ email });
+      if (!pendingUser) {
+        return res.status(400).json({ success: false, message: "User data not found." });
+      }
+  
+      const newUserData = {
+        fullName: pendingUser.fullName || pendingUser.name || "",
+        email: pendingUser.email,
+        password: pendingUser.password,
+        role: pendingUser.role || "student",
+        specialty: pendingUser.specialty || "",
+        hospital: pendingUser.hospital || "",
+        country: pendingUser.country || "",
+        trainingYear: pendingUser.trainingYear || "",
+        isVerified: true,
+        createdAt: new Date(),
+      };
+  
+      const newUser = await User.create(newUserData);
+  
+      await UserOtpVerification.deleteMany({ email });
+      await PendingUser.deleteMany({ email });
+  
+      return res.json({ success: true, message: "User verified and registered successfully.", user: newUser });
+    } catch (error) {
+      console.error("❌ Error verifying OTP:", error.stack || error);
+      return res.status(500).json({ success: false, message: error.message || "Server Error" });
+    }
+  };
+
+
+  exports.forgotPassword = async (req, res) => {
+    const { email } = req.body;
+  
+    try {
+      const user = await User.findOne({ email });
+  
+      if (!user) {
+        return res.status(404).json({ success: false, message: "User not found." });
+      }
+  
+      // Create JWT token
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+        expiresIn: "8h",
+      });
+  
+      // Use CLIENT_URL from environment variables
+      const resetLink = `${process.env.CLIENT_URL}/reset-password/${user._id}/${token}`;
+  
+      const emailSent = await sendEmail(
+        email,
+        "Reset Your Password - Medical-LogBook",
+        resetLink,
+        "resetPassword"
+      );
+  
+      if (!emailSent) {
+        return res.status(500).json({ success: false, message: "Error sending reset email." });
+      }
+  
+      res.json({ success: true, message: "Reset email sent." });
+    } catch (error) {
+      console.error("Error in forgotPassword:", error);
+      res.status(500).json({ success: false, message: "Internal server error." });
+    }
+  };
+  
+  exports.resetPassword = async (req, res) => {
+    const { id, token } = req.params;
+    const { password } = req.body;
+  
+    try {
+      // Verify JWT token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  
+      // Check if the decoded token's id matches the user id in the URL
+      if (!decoded || decoded.id !== id) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid or expired reset token.",
+        });
+      }
+  
+      // Find the user
+      const user = await User.findById(id);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found.",
+        });
+      }
+  
+      // Hash new password
+      const hashedPassword = await argon2.hash(password);
+  
+      // Update user's password
+      user.password = hashedPassword;
+      await user.save();
+  
+      res.json({
+        success: true,
+        message: "Password updated successfully.",
+      });
+    } catch (error) {
+      console.error("Error resetting password:", error.message);
+      res.status(500).json({
+        success: false,
+        message: "Failed to reset password. Token may have expired or is invalid.",
+      });
+    }
+  };

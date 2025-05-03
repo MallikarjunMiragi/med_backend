@@ -8,11 +8,7 @@ router.post('/login', authController.login);
 // Add this route to fetch all users
 // router.get('/users', authController.getAllUsers);
 router.get("/users/student", authController.getUsersByRole);
-
-
 router.get('/users', authController.getAllUsers);
-
-
 router.get("/user/:email", authController.getUserByEmail);
 router.put("/user/update", authController.updateUser);
 router.delete("/user/delete/:email", authController.deleteUser);
@@ -21,5 +17,7 @@ router.get('/userDetails/:email', authController.getUserDetailsByEmail);
 
 // router.get('/api/auth/userDetails', authController.getUserDetails);
 
-
+router.post('/verify-otp', authController.verifyOTP);
+router.post('/forgot-password', authController.forgotPassword);
+router.post("/reset-password/:id/:token", authController.resetPassword);
 module.exports = router;
