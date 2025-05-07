@@ -11,7 +11,7 @@ exports.sendEmail = async (email, subject, content, type) => {
                     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); text-align: left;">
           
           <div style="display: flex; align-items: center; margin-bottom: 20px;">
-            <img src="https://res.cloudinary.com/dkpvbsfee/image/upload/v1740632251/sprintlyLogo_wn57mg.png" 
+            <img src="https://res.cloudinary.com/dttramgf1/image/upload/v1746507751/medAiLogo_fvbnel.jpg" 
                  alt="Medical Logbook Logo" width="50" style="margin-right: 10px;">
             <h2 style="font-style: italic; color: #00695c; margin: 0; line-height: 50px;">Medical Logbook</h2>
           </div>
@@ -51,7 +51,7 @@ exports.sendEmail = async (email, subject, content, type) => {
                     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); text-align: left;">
           
           <div style="display: flex; align-items: center; margin-bottom: 20px;">
-            <img src="https://res.cloudinary.com/dkpvbsfee/image/upload/v1740632251/sprintlyLogo_wn57mg.png" 
+            <img src="https://res.cloudinary.com/dttramgf1/image/upload/v1746507751/medAiLogo_fvbnel.jpg" 
                  alt="Medical Logbook Logo" width="50" style="margin-right: 10px;">
             <h2 style="font-style: italic; color: #33691e; margin: 0; line-height: 50px;">Medical Logbook</h2>
           </div>
