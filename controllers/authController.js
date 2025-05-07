@@ -165,6 +165,7 @@ exports.getUserByEmail = async (req, res) => {
         console.error("Error fetching user:", error);
     }
 }
+
 // Fetch all users
 exports.getAllUsers = async (req, res) => {
     try {
@@ -208,6 +209,17 @@ exports.getUsersByRole = async (req, res) => {
 };
 
 
+exports.getAllRegisteredUsers = async (req, res) => {
+    try {
+        const users = await User.find({}, "fullName email role specialty status");
+        res.status(200).json(users);
+    } catch (error) {
+        console.error("Error fetching all users:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+
 
 // Update user details
 exports.updateUser = async (req, res) => {
@@ -241,6 +253,32 @@ exports.updateUser = async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
+exports.updateUserStatus = async (req, res) => {
+    const { email, status } = req.body;
+  
+    if (!email || !status) {
+      return res.status(400).json({ error: "Email and status are required." });
+    }
+  
+    try {
+      const user = await User.findOneAndUpdate(
+        { email },
+        { status },
+        { new: true }
+      );
+  
+      if (!user) {
+        return res.status(404).json({ error: "User not found." });
+      }
+  
+      res.status(200).json({ message: `User status updated to ${status}` });
+    } catch (error) {
+      console.error("Error updating user status:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+  
 
 
 // Delete user account

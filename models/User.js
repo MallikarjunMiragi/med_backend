@@ -21,8 +21,6 @@ const userSchema = new mongoose.Schema({
     required: true,
   },
 
-
- 
   country: { type: String, required: function() { return this.role === 'student'; } },
   trainingYear: { type: String, required: function() { return this.role === 'student'; } },
   hospital: { type: String, required: function() { return this.role === 'student'; } },
@@ -36,6 +34,13 @@ const userSchema = new mongoose.Schema({
     enum: ['student', 'doctor'], // Role should be either student or doctor
     required: true,
   },
+
+  status: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending"
+  },
+  
 });
 
 // Create the User model
