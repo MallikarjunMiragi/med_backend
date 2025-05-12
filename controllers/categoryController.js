@@ -182,63 +182,6 @@ exports.addCategory = async (req, res) => {
 };
 
 
-// Get all categories
-// Get all categories (Ensure default ones exist)
-
-// exports.getCategories = async (req, res) => {
-//     try {
-//         // Fetch dynamic categories from MongoDB with `_id` included
-//         //const dynamicCategories = await Category.find({}, "_id name fields");
-//         const { email } = req.query;
-
-//         let dynamicCategories = [];
-
-//         if (email) {
-//           // Fetch only categories created by this user
-//           dynamicCategories = await Category.find({ createdBy: email }, "_id name fields");
-//         } else {
-//           // If no email is passed, fetch nothing (just show default categories)
-//           dynamicCategories = [];
-//         }
-        
-
-
-//         // Default categories
-//         const defaultCategories = [
-//             { name: "Admissions", fields: [{ name: "Patient Name", type: "text" }, { name: "Admission Date", type: "date" }] },
-//             { name: "CPD", fields: [{ name: "Activity Name", type: "text" }, { name: "Completion Date", type: "date" }] },
-//             { name: "POCUS", fields: [{ name: "Scan Type", type: "text" }, { name: "Result", type: "text" }] },
-//             { name: "Procedures", fields: [{ name: "Procedure Name", type: "text" }, { name: "Outcome", type: "text" }] }
-//         ];
-
-//         // Insert missing default categories into MongoDB
-//         for (const defaultCat of defaultCategories) {
-//             const existingCategory = await Category.findOne({ name: defaultCat.name });
-//             if (!existingCategory) {
-//                 const newCategory = await Category.create(defaultCat);
-//                 defaultCat._id = newCategory._id; // Store `_id` after creation
-//             } else {
-//                 defaultCat._id = existingCategory._id;
-//             }
-//         }
-
-//         // Filter out duplicates
-//         const filteredDynamicCategories = dynamicCategories.filter(
-//             (cat) => !defaultCategories.some((defaultCat) => defaultCat.name === cat.name)
-//         );
-
-//         // Convert default categories to **mutable objects** before merging
-//         const mutableDefaultCategories = defaultCategories.map((cat) => ({ ...cat }));
-
-//         // Merge categories and return
-//         const allCategories = [...mutableDefaultCategories, ...filteredDynamicCategories];
-
-//         res.status(200).json(allCategories);
-//     } catch (error) {
-//         console.error("Error fetching categories:", error);
-//         res.status(500).json({ error: "Internal Server Error" });
-//     }
-// };
 
 
 exports.getCategories = async (req, res) => {
@@ -260,34 +203,70 @@ exports.getCategories = async (req, res) => {
   
       // Default categories
       const defaultCategories = [
-        {
-          name: "Admissions",
-          fields: [
-            { name: "Patient Name", type: "text" },
-            { name: "Admission Date", type: "date" },
-          ],
-        },
-        {
-          name: "CPD",
-          fields: [
-            { name: "Activity Name", type: "text" },
-            { name: "Completion Date", type: "date" },
-          ],
-        },
-        {
-          name: "POCUS",
-          fields: [
-            { name: "Scan Type", type: "text" },
-            { name: "Result", type: "text" },
-          ],
-        },
-        {
-          name: "Procedures",
-          fields: [
-            { name: "Procedure Name", type: "text" },
-            { name: "Outcome", type: "text" },
-          ],
-        },
+ {
+    name: "Admissions",
+    fields: [
+      { name: "Patient Name", type: "text" },
+      { name: "Admission Date", type: "date" },
+      { name: "Date", type: "date" },
+      { name: "Hospital", type: "text" },
+      { name: "Location", type: "text" },
+      { name: "Referral Source", type: "text" },
+      { name: "Your Reference", type: "text" },
+      { name: "Gender", type: "text" },
+      { name: "Age", type: "number" },
+      { name: "Role", type: "text" },
+      { name: "Specialty Area", type: "text" },
+      { name: "Problem", type: "text" },
+      { name: "Outcome", type: "text" },
+      { name: "Notes", type: "textarea" },
+      { name: "Attachments", type: "file" },
+    ],
+  },
+{
+  name: "CPD",
+  fields: [
+    { name: "Date", type: "date" },
+    { name: "End Date", type: "date" },
+    { name: "Type of CPD Activity", type: "text" },
+    { name: "Title", type: "text" },
+    { name: "Note", type: "textarea" },
+    { name: "Attachment", type: "file" },
+  ],
+},
+
+{
+  name: "POCUS",
+  fields: [
+    { name: "Date", type: "date" },
+    { name: "Site/Type", type: "text" },
+    { name: "Your Reference", type: "text" },
+    { name: "Supervision", type: "text" },
+    { name: "Patient Gender", type: "text" },
+    { name: "Age", type: "number" },
+    { name: "Findings", type: "textarea" },
+    { name: "Note", type: "textarea" },
+    { name: "Attachment", type: "file" },
+  ],
+},
+{
+  name: "Procedures",
+  fields: [
+    { name: "Date", type: "date" },
+    { name: "Procedure", type: "text" },
+    { name: "Hospital", type: "text" },
+    { name: "Supervision", type: "text" },
+    { name: "Supervisor", type: "text" },
+    { name: "Your Reference", type: "text" },
+    { name: "Gender", type: "text" },
+    { name: "Age", type: "number" },
+    { name: "Follow-up Notes", type: "textarea" },
+    { name: "Complications", type: "textarea" },
+    { name: "Notes", type: "textarea" },
+    { name: "Attachments", type: "file" },
+  ],
+},
+
       ];
   
       // Insert missing defaults (only once)
