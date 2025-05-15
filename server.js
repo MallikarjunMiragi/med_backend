@@ -77,51 +77,53 @@ const logentryRoutes = require('./routes/logentryRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const uploadRoute = require('./routes/uploadRoute'); 
 const taskRoutes = require('./routes/tasks'); 
+const supportRoutes = require('./routes/supportRoutes');
 
-dotenv.config(); // Load environment variables from .env file
+dotenv.config(); // Load environment variables
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Enable CORS (must be before routes)
+// Enable CORS
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'], // Allow both ports
+  origin: ['http://localhost:5173', 'http://localhost:5174'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// File Upload Configuration
+// File upload configuration
 const storage = multer.diskStorage({
   destination: "./uploads/",
   filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // Unique filename
+    cb(null, Date.now() + path.extname(file.originalname));
   },
 });
 const upload = multer({ storage: storage });
 
-// Serve uploaded files statically
+// Serve static files
 app.use("/uploads", express.static("uploads"));
 
-// Use API routes
+// API routes
 app.use('/api/auth', authRoutes);
-app.use('/api', taskRoutes); // Assign task routes
+app.use('/api', taskRoutes);
 app.use('/api', uploadRoute);
 app.use('/api/logentry', logentryRoutes);
 app.use('/api/category', categoryRoutes);
+app.use('/api', supportRoutes);
 
-// MongoDB Connection
+// MongoDB connection
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.log(err));
 
-// Optional: a simple test route
+// Root route
 app.get('/', (req, res) => {
   res.send('API is working!');
 });
 
-// Start Server
+// Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
