@@ -124,11 +124,23 @@ exports.login = async (req, res) => {
   }
 
   try {
+        // ✅ Direct login for admin
+    if (email === "admin@logbook.com" && password === "admin1") {
+      return res.status(200).json({
+        message: "Admin login successful",
+       role: "admin",
+        user: { email: "admin@logbook.com", role: "admin" }
+      });
+    }
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
+        if (user.status === "pending") {
+      return res.status(403).json({ error: "Account pending approval" });
+    }
+    
     const isMatch = await argon2.verify(user.password, password); // 👈 using argon2.verify here!
     if (!isMatch) {
       return res.status(401).json({ error: "Invalid credentials" });
