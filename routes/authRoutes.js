@@ -23,4 +23,5 @@ router.get('/users/all', authController.getAllRegisteredUsers);
 router.post('/verify-otp', authController.verifyOTP);
 router.post('/forgot-password', authController.forgotPassword);
 router.post("/reset-password/:id/:token", authController.resetPassword);
+
 module.exports = router;

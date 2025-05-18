@@ -61,6 +61,7 @@ exports.signup = async (req, res) => {
       password: hashedPassword,
       specialty,
       role,
+        status: "pending",
     };
 
     if (role === "student") {
@@ -469,3 +470,5 @@ exports.verifyOTP = async (req, res) => {
       });
     }
   };
+
+  
