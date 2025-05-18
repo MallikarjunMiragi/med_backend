@@ -1,51 +1,6 @@
 const LogEntry = require("../models/LogEntry");
 const Category = require("../models/Category");
 
-// Add log entry to a category
-// exports.addEntry = async (req, res) => {
-//     //console.log("🔹 Received request:", JSON.stringify(req.body, null, 2));
-//     //console.log("🔹 Uploaded file:", req.file);
-
-//     const { email, categoryId, ...otherFields } = req.body;
-//     const files = req.files ? req.files.map((file) => `/uploads/${file.filename}`) : []; // ✅ Handle multiple files
-    
-
-//     if (!email || !categoryId) {
-//         //console.error("❌ Missing required fields:", { email, categoryId });
-//         return res.status(400).json({ error: "Email and categoryId are required" });
-//     }
-
-//     try {
-//         const category = await Category.findById(categoryId);
-//         if (!category) {
-//             //console.error("❌ Category not found:", categoryId);
-//             return res.status(404).json({ error: "Category not found" });
-//         }
-
-//         // ✅ Store all dynamic fields including files
-//         const data = { ...otherFields };
-//         req.files.forEach((file) => {
-//             const fieldName = file.fieldname; // ✅ Get the field name from the file
-//             data[fieldName] = `/uploads/${file.filename}`; // ✅ Store it properly
-//         });
-        
-
-//         const newEntry = new LogEntry({
-//             email,
-//             categoryId: category._id,
-//             categoryName: category.name,
-//             data, // ✅ Store all dynamic fields
-//         });
-
-//         await newEntry.save();
-//         //console.log("✅ Log entry saved:", newEntry);
-//         res.status(201).json({ message: "Log entry added successfully", newEntry });
-//     } catch (error) {
-//         //console.error("❌ Server error:", error);
-//         res.status(500).json({ error: "Internal Server Error" });
-//     }
-// };
-
 
 exports.addEntry = async (req, res) => {
     //console.log("🔹 Received request:", JSON.stringify(req.body, null, 2));
@@ -211,6 +166,66 @@ exports.getEntriesByReviewStatus = async (req, res) => {
             reviewed: reviewedEntries,
             notReviewed: notReviewedEntries,
         });
+    } catch (error) {
+        console.error("❌ Server error:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+// exports.getAverageScore = async (req, res) => {
+//     const { email } = req.params;
+
+//     try {
+//         const entries = await LogEntry.find({ email });
+
+//         if (entries.length === 0) {
+//             return res.status(404).json({ message: "No log entries found for this email" });
+//         }
+
+//         // Calculate the average score
+//         const totalScore = entries.reduce((sum, entry) => sum + (entry.score || 0), 0);
+//         const averageScore = totalScore / entries.length;
+
+//         res.status(200).json({ averageScore });
+//     } catch (error) {
+//         console.error("❌ Server error:", error);
+//         res.status(500).json({ error: "Internal Server Error" });
+//     }
+// };
+// ✅ Improved getAverageScore function
+// exports.getAverageScore = async (req, res) => {
+//     const { email } = req.params;
+
+//     try {
+//         // ✅ Get all log entries for the student
+//         const entries = await LogEntry.find({ email });
+
+//         if (entries.length === 0) {
+//             return res.status(404).json({ message: "No log entries found for this email" });
+//         }
+
+//         // ✅ Calculate the average score
+//         const totalScore = entries.reduce((sum, entry) => sum + (entry.score || 0), 0);
+//         const averageScore = (totalScore / entries.length) * 100 / 20;  // Scale to 100 if max score is 20
+
+//         res.status(200).json({ averageScore });
+//     } catch (error) {
+//         console.error("❌ Server error:", error);
+//         res.status(500).json({ error: "Internal Server Error" });
+//     }
+// };
+exports.getAverageScore = async (req, res) => {
+    const { email } = req.params;
+   // console.log("Average score request for:", email); // ✅ Add this line
+    
+    try {
+        const entries = await LogEntry.find({ email });
+        if (entries.length === 0) {
+            return res.status(404).json({ message: "No log entries found for this email" });
+        }
+        const totalScore = entries.reduce((sum, entry) => sum + (entry.score || 0), 0);
+        const averageScore = (totalScore / entries.length) * 100 / 20;
+        res.status(200).json({ averageScore });
     } catch (error) {
         console.error("❌ Server error:", error);
         res.status(500).json({ error: "Internal Server Error" });
