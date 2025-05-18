@@ -176,14 +176,14 @@ exports.getAllRegisteredUsers = async (req, res) => {
 
 // Update user details
 exports.updateUser = async (req, res) => {
-    const { email, fullName, password, country, trainingYear, hospital, specialty } = req.body;
+    const { originalEmail, email, fullName, password, country, trainingYear, hospital, specialty } = req.body;
 
     if (!email) {
         return res.status(400).json({ error: "Email is required to update user details" });
     }
 
     try {
-        const updateFields = { fullName, country, trainingYear, hospital, specialty };
+        const updateFields = { fullName, email, country, trainingYear, hospital, specialty };
 
         // 🔹 Update password only if provided
         if (password) {
@@ -191,7 +191,7 @@ exports.updateUser = async (req, res) => {
         }
 
         const updatedUser = await User.findOneAndUpdate(
-            { email }, 
+            { email: originalEmail }, 
             updateFields, 
             { new: true }
         );
