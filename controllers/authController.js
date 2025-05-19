@@ -236,14 +236,14 @@ exports.getAllRegisteredUsers = async (req, res) => {
 
 // Update user details
 exports.updateUser = async (req, res) => {
-    const { email, fullName, password, country, trainingYear, hospital, specialty } = req.body;
+    const { originalEmail, email, fullName, password, country, trainingYear, hospital, specialty } = req.body;
 
     if (!email) {
         return res.status(400).json({ error: "Email is required to update user details" });
     }
 
     try {
-        const updateFields = { fullName, country, trainingYear, hospital, specialty };
+        const updateFields = { fullName, email, country, trainingYear, hospital, specialty };
 
         // 🔹 Update password only if provided
         if (password) {
@@ -251,7 +251,7 @@ exports.updateUser = async (req, res) => {
         }
 
         const updatedUser = await User.findOneAndUpdate(
-            { email }, 
+            { email: originalEmail }, 
             updateFields, 
             { new: true }
         );
@@ -292,6 +292,25 @@ exports.updateUserStatus = async (req, res) => {
     }
   };
   
+  // Backend - update user role
+// Route: PUT /api/auth/user/update-role
+exports.updateUserRole = async (req, res) => {
+  const { email, role } = req.body;
+  if (!email || !role) {
+    return res.status(400).json({ error: "Email and role are required." });
+  }
+
+  try {
+    const user = await User.findOneAndUpdate({ email }, { role }, { new: true });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    res.json({ message: "Role updated successfully", user });
+  } catch (err) {
+    console.error("Error updating role:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
 
 
 // Delete user account
