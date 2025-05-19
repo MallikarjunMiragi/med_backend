@@ -93,6 +93,11 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// GEMINI
+require("dotenv").config();
+const geminiRoutes = require("./routes/gemini");
+app.use("/api", geminiRoutes);
+
 // File upload configuration
 const storage = multer.diskStorage({
   destination: "./uploads/",

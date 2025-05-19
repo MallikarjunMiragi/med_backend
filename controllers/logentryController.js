@@ -120,6 +120,11 @@ exports.getEntries = async (req, res) => {
 };
 
 // ✅ Add new API to update comments & score for a log entry
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+require('dotenv').config();
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
 exports.updateEntry = async (req, res) => {
     const { entryId, comments, score } = req.body;
 
@@ -127,23 +132,34 @@ exports.updateEntry = async (req, res) => {
         return res.status(400).json({ error: "Entry ID is required" });
     }
 
+    if (!comments) {
+        return res.status(400).json({ error: "Comments are required" });
+    }
+
     try {
+        // Use Gemini API to enhance the comment
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const result = await model.generateContent(`Enhance this doctor's comment on student into little descriptive and understandable in a formal way (give only one comment):\n"${comments}"`);
+        const enhancedComment = result.response.text();
+
+        // Update entry with enhanced comment
         const updatedEntry = await LogEntry.findByIdAndUpdate(
             entryId,
-            { comments, score },
-            { new: true }  // Return updated document
+            { comments: enhancedComment, score },
+            { new: true }
         );
 
         if (!updatedEntry) {
             return res.status(404).json({ error: "Log entry not found" });
         }
 
-        res.status(200).json({ message: "Log entry updated", updatedEntry });
+        res.status(200).json({ message: "Log entry updated with enhanced comment", updatedEntry });
     } catch (error) {
-        console.error("Error updating log entry:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        console.error("Error updating log entry with Gemini enhancement:", error);
+        res.status(500).json({ error: "Internal Server Error", details: error.message });
     }
 };
+
 exports.getEntriesByReviewStatus = async (req, res) => {
     const { email } = req.params;
 

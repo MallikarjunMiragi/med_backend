@@ -8,11 +8,7 @@ router.post('/login', authController.login);
 // Add this route to fetch all users
 // router.get('/users', authController.getAllUsers);
 router.get("/users/student", authController.getUsersByRole);
-
-
 router.get('/users', authController.getAllUsers);
-
-
 router.get("/user/:email", authController.getUserByEmail);
 router.put("/user/update", authController.updateUser);
 router.put("/user/update-status", authController.updateUserStatus);
