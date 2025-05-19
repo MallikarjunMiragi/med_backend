@@ -232,6 +232,25 @@ exports.updateUserStatus = async (req, res) => {
     }
   };
   
+  // Backend - update user role
+// Route: PUT /api/auth/user/update-role
+exports.updateUserRole = async (req, res) => {
+  const { email, role } = req.body;
+  if (!email || !role) {
+    return res.status(400).json({ error: "Email and role are required." });
+  }
+
+  try {
+    const user = await User.findOneAndUpdate({ email }, { role }, { new: true });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    res.json({ message: "Role updated successfully", user });
+  } catch (err) {
+    console.error("Error updating role:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
 
 
 // Delete user account

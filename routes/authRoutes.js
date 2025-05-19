@@ -20,6 +20,8 @@ router.delete("/user/delete/:email", authController.deleteUser);
 
 router.get('/userDetails/:email', authController.getUserDetailsByEmail);
 router.get('/users/all', authController.getAllRegisteredUsers);
+router.put('/user/update-role', authController.updateUserRole);
+
 
 
 // router.get('/api/auth/userDetails', authController.getUserDetails);
