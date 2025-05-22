@@ -267,32 +267,125 @@ exports.updateUser = async (req, res) => {
     }
 };
 
-exports.updateUserStatus = async (req, res) => {
-    const { email, status } = req.body;
+// exports.updateUserStatus = async (req, res) => {
+//     const { email, status } = req.body;
   
-    if (!email || !status) {
-      return res.status(400).json({ error: "Email and status are required." });
-    }
+//     if (!email || !status) {
+//       return res.status(400).json({ error: "Email and status are required." });
+//     }
   
-    try {
-      const user = await User.findOneAndUpdate(
-        { email },
-        { status },
-        { new: true }
-      );
+//     try {
+//       const user = await User.findOneAndUpdate(
+//         { email },
+//         { status },
+//         { new: true }
+//       );
   
-      if (!user) {
-        return res.status(404).json({ error: "User not found." });
-      }
+//       if (!user) {
+//         return res.status(404).json({ error: "User not found." });
+//       }
   
-      res.status(200).json({ message: `User status updated to ${status}` });
-    } catch (error) {
-      console.error("Error updating user status:", error);
-      res.status(500).json({ error: "Internal Server Error" });
-    }
-  };
+//       res.status(200).json({ message: `User status updated to ${status}` });
+//     } catch (error) {
+//       console.error("Error updating user status:", error);
+//       res.status(500).json({ error: "Internal Server Error" });
+//     }
+//   };
   
 
+
+// exports.updateUserStatus = async (req, res) => {
+//   const { email, status } = req.body;
+
+//   if (!email || !status) {
+//     return res.status(400).json({ error: "Email and status are required." });
+//   }
+
+//   try {
+//     const user = await User.findOneAndUpdate(
+//       { email },
+//       { status },
+//       { new: true }
+//     );
+
+//     if (!user) {
+//       return res.status(404).json({ error: "User not found." });
+//     }
+
+//     // ✅ If status is rejected, move user to PendingUser and delete from User
+//     if (status === 'rejected') {
+//       // Create a new pending user with the same data
+//       const { _id, ...userData } = user.toObject(); // remove _id
+//         userData.otpVerified = true;
+//       await PendingUser.create(userData); // insert into pendingUsers
+
+//       await User.deleteOne({ email }); // remove from users collection
+//     }
+
+//     res.status(200).json({ message: `User status updated to ${status}` });
+//   } catch (error) {
+//     console.error("Error updating user status:", error);
+//     res.status(500).json({ error: "Internal Server Error" });
+//   }
+// };
+
+
+exports.updateUserStatus = async (req, res) => {
+  const { email, status } = req.body;
+
+  if (!email || !status) {
+    return res.status(400).json({ error: "Email and status are required." });
+  }
+
+  try {
+    let user = await User.findOne({ email });
+    let pendingUser = await PendingUser.findOne({ email });
+
+    if (status === 'rejected') {
+      // If in User, move to PendingUser
+      if (user) {
+        const newPending = new PendingUser({ ...user.toObject(), status: 'rejected' });
+        await newPending.save();
+        await User.deleteOne({ email });
+        return res.status(200).json({ message: "User rejected and moved to PendingUser." });
+      }
+
+      // If already in PendingUser, just update status
+      if (pendingUser) {
+        pendingUser.status = 'rejected';
+        await pendingUser.save();
+        return res.status(200).json({ message: "Pending user status updated to rejected." });
+      }
+
+      return res.status(404).json({ error: "User not found in either collection." });
+    }
+
+    if (status === 'approved') {
+      // If already in Users, just update
+      if (user) {
+        user.status = 'approved';
+        await user.save();
+        return res.status(200).json({ message: "User approved." });
+      }
+
+      // If in PendingUser, move to User
+      if (pendingUser) {
+        const newUser = new User({ ...pendingUser.toObject(), status: 'approved' });
+        delete newUser._id; // Let MongoDB generate new _id
+        await newUser.save();
+        await PendingUser.deleteOne({ email });
+        return res.status(200).json({ message: "Pending user approved and moved to Users." });
+      }
+
+      return res.status(404).json({ error: "User not found in either collection." });
+    }
+
+    return res.status(400).json({ error: "Invalid status update." });
+  } catch (err) {
+    console.error("Error updating user status:", err);
+    return res.status(500).json({ error: "Server error while updating user status." });
+  }
+};
 
 // Delete user account
 exports.deleteUser = async (req, res) => {
@@ -339,56 +432,124 @@ exports.getUserDetailsByEmail = async (req, res) => {
 };
 
 
-exports.verifyOTP = async (req, res) => {
-    const { email, otp } = req.body;
-    console.log("Incoming verifyOTP request body:", req.body);
+// exports.verifyOTP = async (req, res) => {
+//     const { email, otp } = req.body;
+//     console.log("Incoming verifyOTP request body:", req.body);
   
-    try {
-      const otpRecord = await UserOtpVerification.findOne({ email });
-      if (!otpRecord) {
-        return res.status(400).json({ success: false, message: "No pending verification found." });
-      }
+//     try {
+//       const otpRecord = await UserOtpVerification.findOne({ email });
+//       if (!otpRecord) {
+//         return res.status(400).json({ success: false, message: "No pending verification found." });
+//       }
   
-      if (otpRecord.expiresAt < Date.now()) {
-        await UserOtpVerification.updateOne({ email }, { $unset: { otp: "" } });
-        return res.status(400).json({ success: false, message: "OTP expired. Request a new one." });
-      }
+//       if (otpRecord.expiresAt < Date.now()) {
+//         await UserOtpVerification.updateOne({ email }, { $unset: { otp: "" } });
+//         return res.status(400).json({ success: false, message: "OTP expired. Request a new one." });
+//       }
   
-      const validOtp = await bcrypt.compare(otp, otpRecord.otp);
-      if (!validOtp) {
-        return res.status(400).json({ success: false, message: "Invalid OTP. Try again." });
-      }
+//       const validOtp = await bcrypt.compare(otp, otpRecord.otp);
+//       if (!validOtp) {
+//         return res.status(400).json({ success: false, message: "Invalid OTP. Try again." });
+//       }
   
-      const pendingUser = await PendingUser.findOne({ email });
-      if (!pendingUser) {
-        return res.status(400).json({ success: false, message: "User data not found." });
-      }
+//       const pendingUser = await PendingUser.findOne({ email });
+//       if (!pendingUser) {
+//         return res.status(400).json({ success: false, message: "User data not found." });
+//       }
   
-      const newUserData = {
-        fullName: pendingUser.fullName || pendingUser.name || "",
-        email: pendingUser.email,
-        password: pendingUser.password,
-        role: pendingUser.role || "student",
-        specialty: pendingUser.specialty || "",
-        hospital: pendingUser.hospital || "",
-        country: pendingUser.country || "",
-        trainingYear: pendingUser.trainingYear || "",
-        isVerified: true,
-        createdAt: new Date(),
-      };
+//       const newUserData = {
+//         fullName: pendingUser.fullName || pendingUser.name || "",
+//         email: pendingUser.email,
+//         password: pendingUser.password,
+//         role: pendingUser.role || "student",
+//         specialty: pendingUser.specialty || "",
+//         hospital: pendingUser.hospital || "",
+//         country: pendingUser.country || "",
+//         trainingYear: pendingUser.trainingYear || "",
+//         isVerified: true,
+//         createdAt: new Date(),
+//       };
   
-      const newUser = await User.create(newUserData);
+//       const newUser = await User.create(newUserData);
   
-      await UserOtpVerification.deleteMany({ email });
-      await PendingUser.deleteMany({ email });
+//       await UserOtpVerification.deleteMany({ email });
+//       await PendingUser.deleteMany({ email });
   
-      return res.json({ success: true, message: "User verified and registered successfully.", user: newUser });
-    } catch (error) {
-      console.error("❌ Error verifying OTP:", error.stack || error);
-      return res.status(500).json({ success: false, message: error.message || "Server Error" });
-    }
-  };
+//       return res.json({ success: true, message: "User verified and registered successfully.", user: newUser });
+//     } catch (error) {
+//       console.error("❌ Error verifying OTP:", error.stack || error);
+//       return res.status(500).json({ success: false, message: error.message || "Server Error" });
+//     }
+//   };
 
+exports.verifyOTP = async (req, res) => {
+  const { email, otp } = req.body;
+  console.log("Incoming verifyOTP request body:", req.body);
+
+  try {
+    const otpRecord = await UserOtpVerification.findOne({ email });
+    if (!otpRecord) {
+      return res.status(400).json({ success: false, message: "No pending verification found." });
+    }
+
+    if (otpRecord.expiresAt < Date.now()) {
+      await UserOtpVerification.updateOne({ email }, { $unset: { otp: "" } });
+      return res.status(400).json({ success: false, message: "OTP expired. Request a new one." });
+    }
+
+    const validOtp = await bcrypt.compare(otp, otpRecord.otp);
+    if (!validOtp) {
+      return res.status(400).json({ success: false, message: "Invalid OTP. Try again." });
+    }
+
+    // ✅ Mark OTP as verified in pending user
+    await PendingUser.updateOne({ email }, { $set: { otpVerified: true } });
+
+    const pendingUser = await PendingUser.findOne({ email });
+    if (!pendingUser) {
+      return res.status(400).json({ success: false, message: "User data not found." });
+    }
+
+    // ✅ Only proceed if status is approved AND otpVerified is true
+    if (pendingUser.status !== "approved") {
+      return res.status(200).json({
+        success: true,
+        message: "OTP verified. Awaiting admin approval.",
+      });
+    }
+
+    if (!pendingUser.otpVerified) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP not verified yet.",
+      });
+    }
+
+    // ✅ Move to User collection
+    const newUserData = {
+      fullName: pendingUser.fullName || pendingUser.name || "",
+      email: pendingUser.email,
+      password: pendingUser.password,
+      role: pendingUser.role || "student",
+      specialty: pendingUser.specialty || "",
+      hospital: pendingUser.hospital || "",
+      country: pendingUser.country || "",
+      trainingYear: pendingUser.trainingYear || "",
+      isVerified: true,
+      createdAt: new Date(),
+    };
+
+    const newUser = await User.create(newUserData);
+
+    await UserOtpVerification.deleteMany({ email });
+    await PendingUser.deleteMany({ email });
+
+    return res.json({ success: true, message: "User verified and registered successfully.", user: newUser });
+  } catch (error) {
+    console.error("❌ Error verifying OTP:", error.stack || error);
+    return res.status(500).json({ success: false, message: error.message || "Server Error" });
+  }
+};
 
   exports.forgotPassword = async (req, res) => {
     const { email } = req.body;
@@ -472,3 +633,59 @@ exports.verifyOTP = async (req, res) => {
   };
 
   
+  
+exports.getPendingUsers = async (req, res) => {
+  try {
+    const pendingUsers = await PendingUser.find({ otpVerified: true, status: "pending" });
+    res.json(pendingUsers);
+  } catch (error) {
+    console.error("Error fetching pending users:", error);
+    res.status(500).json({ message: "Failed to fetch pending users" });
+  }
+};
+
+exports.getAllPendingUsers = async (req, res) => {
+  try {
+    const pendingUsers = await PendingUser.find(); // fetch all documents
+    res.json(pendingUsers);
+  } catch (error) {
+    console.error("Error fetching all pending users:", error);
+    res.status(500).json({ message: "Failed to fetch pending users" });
+  }
+};
+
+exports.approvePendingUser = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email is required." });
+  }
+
+  try {
+    // Find the user in PendingUser collection
+    const pendingUser = await PendingUser.findOne({ email });
+
+    if (!pendingUser) {
+      return res.status(404).json({ error: "Pending user not found." });
+    }
+
+    // Create new User document with status "approved"
+    const newUser = new User({
+      ...pendingUser.toObject(), // copy all fields
+      status: "approved",
+      _id: undefined, // Remove _id to let MongoDB generate a new one
+    });
+
+    // Save the new user
+    await newUser.save();
+
+    // Remove from PendingUser collection
+    await PendingUser.deleteOne({ email });
+
+    return res.status(200).json({ message: "User approved successfully." });
+  } catch (error) {
+    console.error("Error approving pending user:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
