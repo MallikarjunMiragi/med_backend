@@ -179,24 +179,27 @@ exports.getUserByEmail = async (req, res) => {
     }
 }
 
-// Fetch all users
+// Fetch all approved students (exclude doctors)
 exports.getAllUsers = async (req, res) => {
-    try {
-        const { specialty } = req.query; // ✅ Get specialty from query params
+  try {
+    const { specialty } = req.query;
 
-        let query = { role: { $ne: "doctor" } }; // ✅ Exclude doctors
+    // ✅ Only include approved students
+    let query = { role: "student", status: "approved" };
 
-        if (specialty) {
-            query.specialty = specialty; // ✅ Filter by specialty if provided
-        }
-
-        const users = await User.find(query, "fullName email role specialty");
-        res.status(200).json(users);
-    } catch (error) {
-        console.error("Error fetching users:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+    // ✅ Apply specialty filter if present
+    if (specialty) {
+      query.specialty = specialty;
     }
+
+    const users = await User.find(query, "fullName email role specialty");
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 };
+
 
 
 exports.getUsersByRole = async (req, res) => {
@@ -224,7 +227,7 @@ exports.getUsersByRole = async (req, res) => {
 
 exports.getAllRegisteredUsers = async (req, res) => {
     try {
-        const users = await User.find({}, "fullName email role specialty status");
+        const users = await User.find({}, "fullName email role specialty status country trainingYear hospital");
         res.status(200).json(users);
     } catch (error) {
         console.error("Error fetching all users:", error);
