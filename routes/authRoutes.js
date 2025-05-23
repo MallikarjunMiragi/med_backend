@@ -25,5 +25,7 @@ router.put('/user/update-role', authController.updateUserRole);
 router.post('/verify-otp', authController.verifyOTP);
 router.post('/forgot-password', authController.forgotPassword);
 router.post("/reset-password/:id/:token", authController.resetPassword);
-
+router.get('/pending-users', authController.getPendingUsers);
+router.post("/approve-pending-user",authController.approvePendingUser);
+router.get('/pending-users/all', authController.getAllPendingUsers);
 module.exports = router;

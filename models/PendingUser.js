@@ -27,6 +27,11 @@ const pendingUserSchema = new mongoose.Schema({
   specialty: { type: String, required: true },
   role: { type: String, enum: ["student", "doctor"], required: true },
   status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
+  otpVerified: {
+  type: Boolean,
+  default: false,
+}
+,
   createdAt: { type: Date, default: Date.now }
 });
 
