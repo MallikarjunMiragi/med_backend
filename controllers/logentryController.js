@@ -22,25 +22,25 @@ exports.addEntry = async (req, res) => {
         }
 
         // ✅ Predefined fields for default categories
-        const predefinedFields = {
-            "Admissions": ["Patient Name", "Admission Date"],
-            "CPD": ["Activity Name", "Completion Date"],
-            "POCUS": ["Scan Type", "Result"],
-            "Procedures": ["Procedure Name", "Outcome"]
-        };
+        // const predefinedFields = {
+        //     "Admissions": ["Patient Name", "Admission Date"],
+        //     "CPD": ["Activity Name", "Completion Date"],
+        //     "POCUS": ["Scan Type", "Result"],
+        //     "Procedures": ["Procedure Name", "Outcome"]
+        // };
 
         // ✅ Check if the category is one of the default categories
-        if (predefinedFields[category.name]) {
-            const requiredFields = predefinedFields[category.name];
+        // if (predefinedFields[category.name]) {
+        //     const requiredFields = predefinedFields[category.name];
 
-            // Validate that all required fields are present
-            const submittedFields = Object.keys(otherFields);
-            const missingFields = requiredFields.filter(field => !submittedFields.includes(field));
+        //     // Validate that all required fields are present
+        //     const submittedFields = Object.keys(otherFields);
+        //     const missingFields = requiredFields.filter(field => !submittedFields.includes(field));
 
-            if (missingFields.length > 0) {
-                return res.status(400).json({ error: `Missing required fields: ${missingFields.join(", ")}` });
-            }
-        }
+        //     if (missingFields.length > 0) {
+        //         return res.status(400).json({ error: `Missing required fields: ${missingFields.join(", ")}` });
+        //     }
+        // }
 
         // ✅ Store all dynamic fields including file paths
         const data = { ...otherFields };
