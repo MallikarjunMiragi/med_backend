@@ -133,6 +133,12 @@ exports.login = async (req, res) => {
         user: { email: "admin@logbook.com", role: "admin" }
       });
     }
+
+        const pendingUser = await PendingUser.findOne({ email: req.body.email });
+    if (pendingUser) {
+      return res.status(403).json({ error: "Account pending approval" });
+    }
+    
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ error: "User not found" });

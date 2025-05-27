@@ -79,6 +79,7 @@ const uploadRoute = require('./routes/uploadRoute');
 const taskRoutes = require('./routes/tasks'); 
 const supportRoutes = require('./routes/supportRoutes');
 const pendingUserRoutes = require("./routes/pendingUserRoutes");
+const courseSuggestionRoute = require('./routes/courseSuggestionRoute');
 // const userRoutes = require("./routes/user");
 dotenv.config(); // Load environment variables
 
@@ -119,7 +120,7 @@ app.use('/api/logentry', logentryRoutes);
 app.use('/api/category', categoryRoutes);
 app.use('/api', supportRoutes);
 app.use("/api", pendingUserRoutes);
-
+app.use('/api', courseSuggestionRoute);
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('Connected to MongoDB'))
