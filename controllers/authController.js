@@ -94,13 +94,17 @@ exports.signup = async (req, res) => {
 
     // Send OTP email to the user
     try {
-      const emailSent = await sendEmail(email, "Verify Your Email", verificationCode, "verifyOTP");
-      if (!emailSent) {
-        return res.status(500).json({ success: false, message: "Failed to send OTP email." });
-      }
-    } catch (emailErr) {
+      // 2. Then send welcome email with password
+const passwordEmailSent = await sendEmail(
+  email,
+  "Welcome to Medical LogBook - Your Login Credentials",
+  { password }, // pass password in payload
+  "sendPassword" // new template you'll define
+);
+
+} catch (emailErr) {
       console.error("❌ Failed to send OTP email:", emailErr);
-      return res.status(500).json({ success: false, message: "Failed to send OTP email." });
+      return res.status(200).json({ message: "User registered successfully." });
     }
 
     // Send success response

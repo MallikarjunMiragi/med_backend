@@ -80,7 +80,63 @@ exports.sendEmail = async (email, subject, content, type) => {
         </div>
       </div>
     `;
+  }  else if (type === "verifyOTPWithPassword") {
+    emailHtml = `
+      <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f3f3f3; text-align: center;">
+        <div style="max-width: 500px; margin: auto; background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: left;">
+
+          <div style="display: flex; align-items: center; margin-bottom: 20px;">
+            <img src="https://res.cloudinary.com/dttramgf1/image/upload/v1746507751/medAiLogo_fvbnel.jpg" 
+                 alt="Medical Logbook Logo" width="50" style="margin-right: 10px;">
+            <h2 style="font-style: italic; color: #004d40; margin: 0;">Medical Logbook</h2>
+          </div>
+
+          <h2 style="color: #00695c;">Verify Your Email & Password</h2>
+          <p style="font-size: 16px; color: #333;">Use the OTP below to verify your email:</p>
+          <div style="padding: 12px 24px; font-size: 22px; font-weight: bold; color: white; background-color: #00897b; border-radius: 6px; display: inline-block;">
+            ${content.otp}
+          </div>
+
+          <p style="margin-top: 20px; font-size: 16px; color: #333;">Here is your system-generated password:</p>
+          <div style="padding: 12px 24px; font-size: 20px; font-weight: bold; color: white; background-color: #1976d2; border-radius: 6px; display: inline-block;">
+            ${content.password}
+          </div>
+
+          <p style="margin-top: 20px; font-size: 14px; color: #888;">Use this password to log in once your email is verified and your account is approved.</p>
+
+          <footer style="margin-top: 20px; font-size: 12px; color: #aaa;">&copy; ${new Date().getFullYear()} Medical Logbook. All rights reserved.</footer>
+        </div>
+      </div>
+    `;
   }
+  else if (type === "sendPassword") {
+  emailHtml = `
+    <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f3f3f3; text-align: center;">
+      <div style="max-width: 500px; margin: auto; background: #ffffff; padding: 30px; border-radius: 10px; 
+                  box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: left;">
+
+        <div style="display: flex; align-items: center; margin-bottom: 20px;">
+          <img src="https://res.cloudinary.com/dttramgf1/image/upload/v1746507751/medAiLogo_fvbnel.jpg" 
+               alt="Medical Logbook Logo" width="50" style="margin-right: 10px;">
+          <h2 style="font-style: italic; color: #004d40; margin: 0;">Medical Logbook</h2>
+        </div>
+
+        <h2 style="color: #00695c;">Welcome to Medical Logbook</h2>
+        <p style="font-size: 16px; color: #333;">Here is your system-generated password:</p>
+        <div style="padding: 12px 24px; font-size: 20px; font-weight: bold; color: white; background-color: #1976d2; 
+                    border-radius: 6px; display: inline-block;">
+          ${content.password}
+        </div>
+
+        <p style="margin-top: 20px; font-size: 14px; color: #888;">Use this password to log in after verification and approval. We recommend changing it after first login.</p>
+
+        <footer style="margin-top: 20px; font-size: 12px; color: #aaa;">
+          &copy; ${new Date().getFullYear()} Medical Logbook. All rights reserved.
+        </footer>
+      </div>
+    </div>
+  `;
+}
 
   try {
     const mailOptions = {
