@@ -60,7 +60,7 @@
 // app.use('/api/logentry', logentryRoutes);
 // app.use('/api/category', categoryRoutes);
 
-// const PORT = process.env.PORT || 5001;
+// const PORT = process.env.PORT || 5000;
 // app.listen(PORT, () => {
 //   console.log(`Server is running on port ${PORT}`);
 // });
@@ -96,9 +96,9 @@ app.use(cors({
 }));
 
 // GEMINI
-require("dotenv").config();
-const geminiRoutes = require("./routes/gemini");
-app.use("/api", geminiRoutes);
+//gemini
+const geminiRoutes = require('./routes/gemini'); 
+app.use('/api/ai', geminiRoutes);
 
 // File upload configuration
 const storage = multer.diskStorage({
@@ -113,8 +113,12 @@ const upload = multer({ storage: storage });
 app.use("/uploads", express.static("uploads"));
 
 // API routes
+
+
 app.use('/api/auth', authRoutes);
 app.use('/api', taskRoutes);
+app.use("/api/students", require("./routes/students"));
+
 app.use('/api', uploadRoute);
 app.use('/api/logentry', logentryRoutes);
 app.use('/api/category', categoryRoutes);
@@ -132,7 +136,7 @@ app.get('/', (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

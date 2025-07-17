@@ -193,6 +193,20 @@ exports.getUserByEmail = async (req, res) => {
 exports.getAllUsers = async (req, res) => {
   try {
     const { specialty } = req.query;
+ // GET /api/auth/users/all
+const User = require("../models/User");
+
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({}, "-password"); // exclude password
+    res.status(200).json(users);
+  } catch (err) {
+    console.error("Error fetching users:", err);
+    res.status(500).json({ message: "Failed to fetch users" });
+  }
+};
+
+module.exports = { getAllUsers };
 
     // ✅ Only include approved students
     let query = { role: "student", status: "approved" };
@@ -364,25 +378,31 @@ exports.updateUserRole = async (req, res) => {
 
 exports.updateUserStatus = async (req, res) => {
   const { email, status } = req.body;
-
+console.log("Incoming body for updateUserStatus:", req.body);
   if (!email || !status) {
     return res.status(400).json({ error: "Email and status are required." });
+  }
+
+  const mappedStatus = status === "enabled" ? "approved"
+                    : status === "disabled" ? "rejected"
+                    : null;
+
+  if (!mappedStatus) {
+    return res.status(400).json({ error: "Invalid status value." });
   }
 
   try {
     let user = await User.findOne({ email });
     let pendingUser = await PendingUser.findOne({ email });
 
-    if (status === 'rejected') {
-      // If in User, move to PendingUser
+    if (mappedStatus === "rejected") {
       if (user) {
         const newPending = new PendingUser({ ...user.toObject(), status: 'rejected' });
         await newPending.save();
         await User.deleteOne({ email });
-        return res.status(200).json({ message: "User rejected and moved to PendingUser." });
+        return res.status(200).json({ message: "User disabled and moved to PendingUser." });
       }
 
-      // If already in PendingUser, just update status
       if (pendingUser) {
         pendingUser.status = 'rejected';
         await pendingUser.save();
@@ -392,21 +412,19 @@ exports.updateUserStatus = async (req, res) => {
       return res.status(404).json({ error: "User not found in either collection." });
     }
 
-    if (status === 'approved') {
-      // If already in Users, just update
+    if (mappedStatus === "approved") {
       if (user) {
         user.status = 'approved';
         await user.save();
-        return res.status(200).json({ message: "User approved." });
+        return res.status(200).json({ message: "User enabled." });
       }
 
-      // If in PendingUser, move to User
       if (pendingUser) {
         const newUser = new User({ ...pendingUser.toObject(), status: 'approved' });
-        delete newUser._id; // Let MongoDB generate new _id
+        delete newUser._id;
         await newUser.save();
         await PendingUser.deleteOne({ email });
-        return res.status(200).json({ message: "Pending user approved and moved to Users." });
+        return res.status(200).json({ message: "Pending user enabled and moved to Users." });
       }
 
       return res.status(404).json({ error: "User not found in either collection." });
@@ -720,4 +738,3 @@ exports.approvePendingUser = async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
-

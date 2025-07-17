@@ -1,39 +1,16 @@
 const mongoose = require('mongoose');
 
-const assignedTaskSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true
-  },
-  description: {
-    type: String,
-    required: true
-  },
-  priority: {
-    type: String,
-    enum: ['Low', 'Medium', 'High'],
-    required: true
-  },
-  targetDate: {
-    type: Date,
-    required: true
-  },
-  department: {
-    type: String,
-    required: true
-  },
-  assignedBy: {
-    type: String,  // The email of the doctor
-    required: true
-  },
-    specialty: {
-    type: String,  // The specialty of the doctor
-    required: true,
-  },
-  dateAssigned: {
-    type: Date,
-    default: Date.now
-  }
-});
+const taskSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  description: String,
+  priority: { type: String, required: true },
+  targetDate: { type: Date, required: true },
+  assignedBy: { type: String, required: true },
+  specialty: String,
+  assignmentType: { type: String, enum: ['department', 'students'], required: true },
+  department: { type: String, default: null },
+  assignedTo: [String], 
 
-module.exports = mongoose.model('AssignedTask', assignedTaskSchema);
+}, { timestamps: true });
+
+module.exports = mongoose.model('AssignedTask', taskSchema);

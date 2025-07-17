@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require("multer");
 const path = require("path");
+const LogEntry = require("../models/LogEntry");
 
 const storage = multer.diskStorage({
   destination: "./uploads/",
