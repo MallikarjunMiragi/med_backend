@@ -24,6 +24,42 @@ const retryGeminiCall = async (model, prompt, retries = 3, delay = 2000) => {
   }
 };
 
+
+// 📝 Parse form fields from transcript text
+router.post('/parse-form-fields', async (req, res) => {
+  try {
+    const { transcript, fieldNames } = req.body;
+    if (!transcript) {
+      return res.status(400).json({ error: 'transcript is required' });
+    }
+
+    // Optionally, allow frontend to specify expected field names for more accurate extraction
+    let fieldListText = '';
+    if (Array.isArray(fieldNames) && fieldNames.length > 0) {
+      fieldListText = `\nThe expected form fields are: ${fieldNames.join(', ')}.`;
+    }
+
+    const inputPrompt = `You are an expert medical form assistant. Extract the following form fields and their values from the transcript below.\n${fieldListText}\n\nReturn ONLY a valid JSON object mapping field names to their values.\n\nTranscript:\n${transcript}`;
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const geminiResponse = await retryGeminiCall(model, inputPrompt);
+
+    // Try to parse Gemini's response as JSON
+    let fields = null;
+    try {
+      fields = JSON.parse(geminiResponse);
+    } catch (parseErr) {
+      // If Gemini returns non-JSON, wrap as string
+      return res.status(200).json({ error: 'Could not parse Gemini response as JSON', raw: geminiResponse });
+    }
+
+    res.json({ fields });
+  } catch (error) {
+    console.error('Gemini parse-form-fields error:', error?.message || error);
+    res.status(503).json({ error: 'Form field extraction unavailable. Please try again later.' });
+  }
+});
+
 // 🔍 Summarize a full entry (with optional file)
 router.post('/summarize', upload.single('file'), async (req, res) => {
   try {
